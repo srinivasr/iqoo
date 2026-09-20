@@ -1,5 +1,6 @@
 package com.dhrashta.x.ui
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,7 +29,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.dhrashta.x.ui.components.AppIdentity
 import com.dhrashta.x.ui.components.Chevron
@@ -54,6 +54,7 @@ fun RiskDetailsScreen(
     onUninstall: () -> Unit,
     onListen: () -> Unit,
 ) {
+    BackHandler(onBack = onBack)
     var evidenceExpanded by rememberSaveable { mutableStateOf(true) }
     Column(
         Modifier.fillMaxSize().background(Canvas).verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding),

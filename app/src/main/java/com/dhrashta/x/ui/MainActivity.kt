@@ -49,7 +49,14 @@ class MainActivity : ComponentActivity() {
                         onUninstall = { GuidedRecovery.requestUninstall(this, QUICK_TOOLS_PACKAGE) },
                         onListen = { showPlaceholder("Explanation playback") },
                     )
-                    AppDestination.Paused -> Unit
+                    AppDestination.Paused -> InternetPausedScreen(
+                        onBack = { destination = AppDestination.RiskDetails },
+                        onResumeInternet = {
+                            showPlaceholder("Internet access resumed")
+                            destination = AppDestination.Dashboard
+                        },
+                        onReviewPermissions = { GuidedRecovery.openAppInfo(this, QUICK_TOOLS_PACKAGE) },
+                    )
                 }
             }
         }
