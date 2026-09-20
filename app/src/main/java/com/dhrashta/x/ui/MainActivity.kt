@@ -11,6 +11,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.sensing.DhrashtaForegroundService
+import com.dhrashta.x.ui.theme.DhrashtaTheme
 
 class MainActivity : ComponentActivity() {
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
@@ -27,9 +28,10 @@ class MainActivity : ComponentActivity() {
         }
         setContent {
             DhrashtaTheme {
-                DhrashtaScreen(
-                    onScan = ::scanNow,
-                    onEnableContainment = ::requestVpnPermission,
+                DashboardScreen(
+                    onRiskDetails = { },
+                    onActivity = { },
+                    onSettings = { },
                 )
             }
         }
