@@ -1,0 +1,11 @@
+.gradle/
+.idea/
+*.iml
+build/
+app/build/
+local.properties
+.tooling/
+captures/
+DHRASHTA-X.pdf
+*.apk
+d79078f2-7d3d-40ad-a25a-2c6b36ac805a.png

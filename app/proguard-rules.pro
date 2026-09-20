@@ -1,0 +1,3 @@
+-keep class org.tensorflow.lite.** { *; }
+-keep class com.google.mediapipe.** { *; }
+-keep class com.dhrashta.x.data.** { *; }
