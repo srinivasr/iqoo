@@ -38,11 +38,13 @@ class A11yObserver(
             context.contentResolver,
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES,
         ).orEmpty()
-        return TextUtils.SimpleStringSplitter(':').run {
+        val packages = mutableSetOf<String>()
+        TextUtils.SimpleStringSplitter(':').run {
             setString(flattened)
-            asSequence().mapNotNull { value ->
-                android.content.ComponentName.unflattenFromString(value)?.packageName
-            }.toSet()
+            while (hasNext()) {
+                android.content.ComponentName.unflattenFromString(next())?.packageName?.let(packages::add)
+            }
         }
+        return packages
     }
 }

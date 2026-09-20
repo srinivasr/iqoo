@@ -115,7 +115,11 @@ class GuardVpnService : VpnService() {
             FileInputStream(descriptor.fileDescriptor).use { input ->
                 val buffer = ByteArray(32_767)
                 while (isActive) {
-                    val count = runCatching { input.read(buffer) }.getOrElse { break }
+                    val count = try {
+                        input.read(buffer)
+                    } catch (_: java.io.IOException) {
+                        break
+                    }
                     if (count <= 0) continue
                     val resolvedUid = inspector.getUid(buffer, count)
                     val blockedUid = if (resolvedUid in pausedUids) resolvedUid else pausedUids.firstOrNull() ?: resolvedUid
