@@ -3,6 +3,7 @@
 *.iml
 build/
 app/build/
+app/schemas/
 local.properties
 .tooling/
 captures/
