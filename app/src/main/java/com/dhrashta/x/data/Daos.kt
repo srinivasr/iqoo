@@ -12,6 +12,13 @@ interface EventDao {
 
     @Query("SELECT * FROM events ORDER BY timestamp DESC LIMIT 100")
     suspend fun recent(): List<Event>
+
+    /** Events for [pkg] plus device-wide events ([devicePkg]) since [since], oldest first. */
+    @Query(
+        "SELECT * FROM events WHERE (pkg = :pkg OR pkg = :devicePkg) AND timestamp >= :since " +
+            "ORDER BY timestamp ASC, id ASC",
+    )
+    suspend fun forPackageSince(pkg: String, devicePkg: String, since: Long): List<Event>
 }
 
 @Dao

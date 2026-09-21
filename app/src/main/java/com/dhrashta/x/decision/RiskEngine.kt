@@ -19,6 +19,7 @@ class RiskEngine {
         networkScore: Float?,
         allowList: Set<String>,
         threatList: ThreatList,
+        causalBonus: Int = 0,
     ): Result {
         val signals = buildList {
             if (!a11y.isAccessibilityTool) add(SignalCatalogue.A1)
@@ -41,7 +42,7 @@ class RiskEngine {
             if (identity.pkg in allowList) add(SignalCatalogue.N2)
             if (identity.isSystemApp) add(SignalCatalogue.N3)
         }
-        val score = signals.sumOf(Signal::weight).coerceAtLeast(0)
+        val score = (signals.sumOf(Signal::weight) + causalBonus).coerceAtLeast(0)
         val band = when {
             score >= 90 -> Band.CRITICAL
             score >= 60 -> Band.HIGH

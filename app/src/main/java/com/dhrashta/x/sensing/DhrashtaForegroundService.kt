@@ -15,6 +15,7 @@ import com.dhrashta.x.ai.LlmExplainer
 import com.dhrashta.x.ai.NetworkAnomalyModel
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
+import com.dhrashta.x.decision.CausalChains
 import com.dhrashta.x.decision.RiskEngine
 import com.dhrashta.x.decision.ThreatList
 import com.dhrashta.x.enforcement.NetworkPause
@@ -30,6 +31,7 @@ class DhrashtaForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private lateinit var observer: A11yObserver
     private lateinit var packageWatcher: PackageWatcher
+    private lateinit var devicePostureWatcher: DevicePostureWatcher
     private lateinit var identityResolver: IdentityResolver
     private lateinit var inspector: A11yInspector
     private lateinit var postureChecker: PostureChecker
@@ -56,12 +58,29 @@ class DhrashtaForegroundService : Service() {
         accessibilityModel = AccessibilityMlpClassifier(this)
         networkModel = NetworkAnomalyModel(this)
         explainer = LlmExplainer(this)
-        observer = A11yObserver(this) { packages -> packages.forEach(::evaluateAsync) }
+        observer = A11yObserver(this) { packages ->
+            val enabledAt = System.currentTimeMillis()
+            packages.forEach { pkg ->
+                serviceScope.launch {
+                    // Enabling an accessibility service is both the a11y step and a privilege grant (CC-1, CC-2, CC-4).
+                    EventLogger.logEvent(pkg, EventLogger.A11Y_ENABLED, enabledAt)
+                    EventLogger.logEvent(pkg, EventLogger.PRIVILEGE_CHANGE, enabledAt)
+                    evaluate(pkg)
+                }
+            }
+        }
         packageWatcher = PackageWatcher(this) { pkg ->
             EvaluationStateStore.update { it.copy(message = "New app installed: $pkg") }
+            val installedAt = System.currentTimeMillis()
+            serviceScope.launch {
+                val installer = runCatching { identityResolver.resolve(pkg).installer }.getOrNull()
+                if (installer != PLAY_STORE) EventLogger.logEvent(pkg, EventLogger.SIDELOAD, installedAt)
+            }
         }
+        devicePostureWatcher = DevicePostureWatcher(this)
         observer.start()
         packageWatcher.start()
+        devicePostureWatcher.start()
         EvaluationStateStore.update {
             it.copy(
                 monitoring = true,
@@ -84,6 +103,7 @@ class DhrashtaForegroundService : Service() {
     override fun onDestroy() {
         observer.stop()
         packageWatcher.stop()
+        devicePostureWatcher.stop()
         accessibilityModel.close()
         networkModel.close()
         explainer.close()
@@ -124,6 +144,10 @@ class DhrashtaForegroundService : Service() {
             val networkScore: Float? = null
             val allowList = getSharedPreferences(ALLOW_LIST_PREFS, MODE_PRIVATE)
                 .getStringSet(ALLOW_LIST_KEY, emptySet()).orEmpty()
+            val now = System.currentTimeMillis()
+            val recentEvents = EventLogger.recentEvents(pkg, since = now - CausalChains.LOOKBACK_MILLIS)
+            val matchedChains = CausalChains.matchedChains(recentEvents, now)
+            val causalBonus = CausalChains.match(recentEvents, now)
             val result = riskEngine.evaluate(
                 identity = identity,
                 a11y = finding,
@@ -132,6 +156,7 @@ class DhrashtaForegroundService : Service() {
                 networkScore = networkScore,
                 allowList = allowList,
                 threatList = threatList,
+                causalBonus = causalBonus,
             )
             EventLogger.recordRisk(pkg, result.score, result.band.name)
             EventLogger.recordSignals(pkg, result)
@@ -151,7 +176,8 @@ class DhrashtaForegroundService : Service() {
                     score = result.score,
                     band = result.band.name,
                     explanation = explanation,
-                    firedSignals = result.firedSignals.map { signal -> "${signal.id}: ${signal.description}" },
+                    firedSignals = result.firedSignals.map { signal -> "${signal.id}: ${signal.description}" } +
+                        matchedChains.map { chain -> "${chain.id}: ${chain.steps.joinToString(" → ")} (+${chain.bonus})" },
                     contained = contained,
                     message = when {
                         contained -> "Critical risk contained; network access paused"
@@ -161,7 +187,11 @@ class DhrashtaForegroundService : Service() {
                 )
             }
             showRiskNotification(identity.appLabel, pkg, result, explanation)
-            Log.i(TAG, "Evaluated $pkg score=${result.score} band=${result.band} signals=${result.firedSignals.map { it.id }}")
+            Log.i(
+                TAG,
+                "Evaluated $pkg score=${result.score} band=${result.band} signals=${result.firedSignals.map { it.id }} " +
+                    "chains=${matchedChains.map { it.id }} causalBonus=$causalBonus",
+            )
         }.onFailure { error ->
             Log.e(TAG, "Evaluation failed for $pkg", error)
             EvaluationStateStore.update {
@@ -230,5 +260,6 @@ class DhrashtaForegroundService : Service() {
         private const val ALLOW_LIST_KEY = "packages"
         private const val UI_PREFS = "ui_preferences"
         private const val LANGUAGE_KEY = "language"
+        private const val PLAY_STORE = "com.android.vending"
     }
 }
