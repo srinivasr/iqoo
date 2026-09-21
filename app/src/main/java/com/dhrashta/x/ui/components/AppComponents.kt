@@ -31,9 +31,17 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.dhrashta.x.ui.AppIcon
+import com.dhrashta.x.ui.InstalledApp
+import com.dhrashta.x.ui.RiskLevel
 import com.dhrashta.x.ui.theme.Amber
 import com.dhrashta.x.ui.theme.AmberSoft
+import com.dhrashta.x.ui.theme.Danger
+import com.dhrashta.x.ui.theme.DangerSoft
 import com.dhrashta.x.ui.theme.Forest
+import com.dhrashta.x.ui.theme.ForestSoft
+import com.dhrashta.x.ui.theme.Info
+import com.dhrashta.x.ui.theme.InfoSoft
 import com.dhrashta.x.ui.theme.Ink
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
@@ -68,30 +76,38 @@ fun AmberLabel(text: String) {
 }
 
 @Composable
-fun AppIdentity(compact: Boolean = false) {
+fun AppIdentity(app: InstalledApp, compact: Boolean = false) {
     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-        QuickToolsIcon(Modifier.size(if (compact) 42.dp else 52.dp))
+        AppIcon(app.pkg, app.label, Modifier.size(if (compact) 42.dp else 52.dp))
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            Text("QuickTools", style = MaterialTheme.typography.titleMedium)
-            Text("Version 2.4.1", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+            Text(app.label, style = MaterialTheme.typography.titleMedium)
+            Text(
+                app.versionName?.let { "Version $it" } ?: app.pkg,
+                color = MutedInk,
+                style = MaterialTheme.typography.bodyMedium,
+            )
         }
     }
 }
 
+/** Coloured pill for a risk level: green safe, amber review, red high/critical. */
 @Composable
-fun QuickToolsIcon(modifier: Modifier = Modifier) {
-    Box(
-        modifier = modifier.background(Color(0xFFF0EEE7), RoundedCornerShape(10.dp)).border(1.dp, Line, RoundedCornerShape(10.dp)),
-        contentAlignment = Alignment.Center,
-    ) {
-        Canvas(Modifier.size(25.dp)) {
-            val w = size.width
-            val stroke = Stroke(width = 2.3f, cap = StrokeCap.Round)
-            drawLine(Ink, Offset(w * .24f, w * .26f), Offset(w * .76f, w * .74f), strokeWidth = stroke.width, cap = StrokeCap.Round)
-            drawCircle(Ink, w * .14f, Offset(w * .27f, w * .25f), style = stroke)
-            drawCircle(Ink, w * .14f, Offset(w * .73f, w * .75f), style = stroke)
-        }
+fun RiskBadge(level: RiskLevel, trusted: Boolean = false, paused: Boolean = false) {
+    val (text, fg, bg) = when {
+        paused -> Triple("Paused", Info, InfoSoft)
+        trusted -> Triple("Trusted", Forest, ForestSoft)
+        level == RiskLevel.Critical -> Triple("Critical risk", Color.White, Danger)
+        level == RiskLevel.High -> Triple("High risk", Danger, DangerSoft)
+        level == RiskLevel.Review -> Triple("Review recommended", Amber, AmberSoft)
+        else -> Triple("Low risk", Forest, ForestSoft)
     }
+    Text(
+        text = text,
+        color = fg,
+        fontSize = 12.sp,
+        fontWeight = FontWeight.SemiBold,
+        modifier = Modifier.background(bg, RoundedCornerShape(5.dp)).padding(horizontal = 8.dp, vertical = 4.dp),
+    )
 }
 
 @Composable

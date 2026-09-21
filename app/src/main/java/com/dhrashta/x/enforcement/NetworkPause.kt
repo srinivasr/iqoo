@@ -23,6 +23,17 @@ object NetworkPause {
         return true
     }
 
+    /** Starts DNS-only beacon monitoring if VPN consent was already granted; returns false otherwise. */
+    fun startDnsMonitor(context: Context): Boolean {
+        if (VpnService.prepare(context) != null) return false
+        return runCatching {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, GuardVpnService::class.java).setAction(GuardVpnService.ACTION_START_MONITOR),
+            )
+        }.isSuccess
+    }
+
     fun resume(context: Context, uid: Int) {
         ContextCompat.startForegroundService(
             context,

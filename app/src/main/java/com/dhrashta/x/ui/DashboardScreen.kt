@@ -14,13 +14,22 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -28,16 +37,22 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.dhrashta.x.ui.components.AmberLabel
-import com.dhrashta.x.ui.components.QuickToolsIcon
+import com.dhrashta.x.R
 import com.dhrashta.x.ui.components.QuietCard
+import com.dhrashta.x.ui.components.RiskBadge
 import com.dhrashta.x.ui.components.ScreenPadding
 import com.dhrashta.x.ui.components.SectionTitle
+import com.dhrashta.x.ui.theme.Amber
 import com.dhrashta.x.ui.theme.Canvas as CanvasColor
+import com.dhrashta.x.ui.theme.Danger
 import com.dhrashta.x.ui.theme.Forest
+import com.dhrashta.x.ui.theme.ForestSoft
+import com.dhrashta.x.ui.theme.Info
 import com.dhrashta.x.ui.theme.Ink
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
@@ -45,86 +60,249 @@ import com.dhrashta.x.ui.theme.Surface
 
 @Composable
 fun DashboardScreen(
-    onRiskDetails: () -> Unit,
+    apps: List<AppRisk>?,
+    monitoring: Boolean,
+    statusMessage: String,
+    recent: List<ActivityItem>,
+    labels: Map<String, String>,
+    onOpenApp: (String) -> Unit,
     onActivity: () -> Unit,
     onSettings: () -> Unit,
 ) {
+    var query by rememberSaveable { mutableStateOf("") }
+    var showSystem by rememberSaveable { mutableStateOf(false) }
+    val attention = apps.orEmpty().filter { it.level >= RiskLevel.Review && !it.trusted }.sortedByDescending { it.score }
+    val paused = apps.orEmpty().count { it.paused }
+    val listed = apps.orEmpty().filter { risk ->
+        (showSystem || !risk.app.isSystem || risk.app.a11yEnabled) &&
+            (query.isBlank() || risk.app.label.contains(query, ignoreCase = true) || risk.app.pkg.contains(query, ignoreCase = true))
+    }
     Column(Modifier.fillMaxSize().background(CanvasColor)) {
-        Column(
-            Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding),
-        ) {
-            Spacer(Modifier.height(20.dp))
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text("DHRASHTA-X", fontSize = 17.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = 0.4.sp, modifier = Modifier.weight(1f))
-                Box(Modifier.size(44.dp).clickable(onClick = onSettings), contentAlignment = Alignment.Center) {
-                    LineIcon(LineIconType.Settings, Modifier.size(23.dp))
+        LazyColumn(Modifier.weight(1f).padding(horizontal = ScreenPadding)) {
+            item {
+                Spacer(Modifier.height(20.dp))
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        stringResource(R.string.app_name),
+                        fontSize = 17.sp,
+                        fontWeight = FontWeight.ExtraBold,
+                        letterSpacing = 0.4.sp,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Box(Modifier.size(44.dp).clickable(onClick = onSettings), contentAlignment = Alignment.Center) {
+                        LineIcon(LineIconType.Settings, Modifier.size(23.dp))
+                    }
+                }
+                Spacer(Modifier.height(26.dp))
+                Text("App protection", style = MaterialTheme.typography.headlineMedium)
+                Spacer(Modifier.height(14.dp))
+                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
+                    Box(Modifier.size(8.dp).background(if (monitoring) Forest else Amber, CircleShape))
+                    Text(
+                        if (monitoring) "Monitoring active" else "Monitoring is starting",
+                        color = if (monitoring) Forest else Amber,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+                Text(
+                    statusMessage,
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+                Spacer(Modifier.height(24.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    MetricCard(apps?.count { !it.app.isSystem }?.toString() ?: "–", "apps checked", Modifier.weight(1f))
+                    MetricCard(if (apps == null) "–" else attention.size.toString(), "to review", Modifier.weight(1f))
+                    MetricCard(if (apps == null) "–" else paused.toString(), "paused", Modifier.weight(1f))
+                }
+                Spacer(Modifier.height(34.dp))
+                SectionTitle("Needs your attention")
+                Spacer(Modifier.height(13.dp))
+            }
+            when {
+                apps == null -> item { LoadingCard("Checking installed apps…") }
+                attention.isEmpty() -> item {
+                    QuietCard(Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Box(Modifier.size(36.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) {
+                                LineIcon(LineIconType.Check, Modifier.size(20.dp), Forest)
+                            }
+                            Column(Modifier.padding(start = 12.dp)) {
+                                Text("All clear", style = MaterialTheme.typography.titleMedium)
+                                Text("No installed app needs a review right now.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                            }
+                        }
+                    }
+                }
+                else -> items(attention, key = { "attention-${it.app.pkg}" }) { risk ->
+                    AttentionCard(risk) { onOpenApp(risk.app.pkg) }
+                    Spacer(Modifier.height(12.dp))
                 }
             }
-            Spacer(Modifier.height(26.dp))
-            Text("App protection", style = MaterialTheme.typography.headlineMedium)
-            Spacer(Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                Box(Modifier.size(8.dp).background(Forest, CircleShape))
-                Text("Monitoring active", color = Forest, style = MaterialTheme.typography.titleMedium)
-            }
-            Text(
-                "Analysis stays on your phone.",
-                color = MutedInk,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 6.dp),
-            )
-            Spacer(Modifier.height(24.dp))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                MetricCard("1", "app to review", Modifier.weight(1f))
-                MetricCard("0", "apps paused", Modifier.weight(1f))
-            }
-            Spacer(Modifier.height(34.dp))
-            SectionTitle("Needs your attention")
-            Spacer(Modifier.height(13.dp))
-            QuietCard(Modifier.fillMaxWidth().clickable(onClick = onRiskDetails)) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        QuickToolsIcon(Modifier.size(44.dp))
-                        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                            Text("QuickTools", style = MaterialTheme.typography.titleMedium)
-                            Text("Installed outside Play Store", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-                        }
-                        LineIcon(LineIconType.Chevron, Modifier.size(19.dp))
+            item {
+                Spacer(Modifier.height(22.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    SectionTitle("Recent activity", Modifier.weight(1f))
+                    if (recent.isNotEmpty()) {
+                        Text(
+                            "See all",
+                            color = Forest,
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.clickable(onClick = onActivity).padding(8.dp),
+                        )
                     }
-                    HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Line)
-                    AmberLabel("Review recommended")
-                    Text(
-                        "Repeated connections and sensitive access",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedInk,
-                        modifier = Modifier.padding(top = 9.dp),
+                }
+                Spacer(Modifier.height(13.dp))
+                if (recent.isEmpty()) {
+                    QuietCard(Modifier.fillMaxWidth()) {
+                        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                            LineIcon(LineIconType.Activity, Modifier.size(22.dp), MutedInk)
+                            Text(
+                                "No activity yet. Reviews and blocked connections appear here.",
+                                color = MutedInk,
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(start = 12.dp),
+                            )
+                        }
+                    }
+                }
+            }
+            items(recent.take(3), key = { "recent-${it.key}" }) { item ->
+                ActivityRow(item, labels, onOpenApp)
+                Spacer(Modifier.height(10.dp))
+            }
+            item {
+                Spacer(Modifier.height(24.dp))
+                SectionTitle(if (apps == null) "Installed apps" else "Installed apps (${listed.size})")
+                Spacer(Modifier.height(12.dp))
+                OutlinedTextField(
+                    value = query,
+                    onValueChange = { query = it },
+                    placeholder = { Text("Search apps") },
+                    singleLine = true,
+                    shape = RoundedCornerShape(10.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Row(Modifier.padding(top = 8.dp, bottom = 10.dp)) {
+                    FilterChip(
+                        selected = showSystem,
+                        onClick = { showSystem = !showSystem },
+                        label = { Text("Show system apps") },
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = ForestSoft, selectedLabelColor = Forest),
                     )
                 }
             }
-            Spacer(Modifier.height(34.dp))
-            SectionTitle("Recent activity")
-            Spacer(Modifier.height(13.dp))
-            QuietCard(Modifier.fillMaxWidth()) {
-                Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                    LineIcon(LineIconType.Activity, Modifier.size(22.dp), MutedInk)
-                    Column(Modifier.padding(start = 12.dp)) {
-                        Text("QuickTools reviewed", style = MaterialTheme.typography.titleMedium)
-                        Text("A few minutes ago", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
-                    }
-                }
+            if (apps != null && listed.isEmpty()) {
+                item { Text("No apps match your search.", color = MutedInk, modifier = Modifier.padding(vertical = 12.dp)) }
             }
-            Spacer(Modifier.height(24.dp))
+            items(listed, key = { "app-${it.app.pkg}" }) { risk ->
+                AppRow(risk) { onOpenApp(risk.app.pkg) }
+                HorizontalDivider(Modifier.padding(start = 52.dp), color = Line)
+            }
+            item { Spacer(Modifier.height(24.dp)) }
         }
         BottomNavigation(active = BottomDestination.Home, onHome = {}, onActivity = onActivity, onSettings = onSettings)
     }
 }
 
 @Composable
+private fun AttentionCard(risk: AppRisk, onClick: () -> Unit) {
+    QuietCard(Modifier.fillMaxWidth().clickable(onClick = onClick)) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                AppIcon(risk.app.pkg, risk.app.label, Modifier.size(44.dp))
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text(risk.app.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        risk.evidence.firstOrNull()?.title ?: "Risk score ${risk.score}",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodyMedium,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                }
+                LineIcon(LineIconType.Chevron, Modifier.size(19.dp))
+            }
+            HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Line)
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                RiskBadge(risk.level, risk.trusted, risk.paused)
+                Text(
+                    "Score ${risk.score}",
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(start = 10.dp),
+                )
+            }
+            if (risk.evidence.size > 1) {
+                Text(
+                    risk.evidence.drop(1).take(2).joinToString(" · ") { it.title },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedInk,
+                    modifier = Modifier.padding(top = 9.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AppRow(risk: AppRisk, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onClick).padding(vertical = 11.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        AppIcon(risk.app.pkg, risk.app.label, Modifier.size(40.dp))
+        Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+            Text(risk.app.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(
+                sourceText(risk.app),
+                color = MutedInk,
+                style = MaterialTheme.typography.bodyMedium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        StatusDot(risk)
+    }
+}
+
+@Composable
+private fun StatusDot(risk: AppRisk) {
+    val color = when {
+        risk.paused -> Info
+        risk.trusted -> Forest
+        risk.level >= RiskLevel.High -> Danger
+        risk.level == RiskLevel.Review -> Amber
+        else -> Forest
+    }
+    Box(Modifier.size(10.dp).background(color, CircleShape))
+}
+
+/** Where an app came from, in plain words. */
+fun sourceText(app: InstalledApp): String = when {
+    app.isSystem -> "Pre-installed"
+    !app.sideloaded -> "Play Store"
+    app.installerLabel != null -> "Installed by ${app.installerLabel}"
+    else -> "Installed outside Play Store"
+}
+
+@Composable
+fun LoadingCard(text: String) {
+    QuietCard(Modifier.fillMaxWidth()) {
+        Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            CircularProgressIndicator(Modifier.size(20.dp), color = Forest, strokeWidth = 2.dp)
+            Text(text, color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 12.dp))
+        }
+    }
+}
+
+@Composable
 private fun MetricCard(value: String, label: String, modifier: Modifier = Modifier) {
     QuietCard(modifier) {
-        Column(Modifier.padding(horizontal = 16.dp, vertical = 14.dp)) {
+        Column(Modifier.padding(horizontal = 14.dp, vertical = 14.dp)) {
             Text(value, fontSize = 24.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
-            Text(label, color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+            Text(label, color = MutedInk, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }

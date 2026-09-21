@@ -2,6 +2,8 @@ package com.dhrashta.x.decision
 
 import android.Manifest
 import com.dhrashta.x.ai.AccessibilityMlpClassifier
+import com.dhrashta.x.data.Event
+import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.sensing.A11yFinding
 import com.dhrashta.x.sensing.Identity
 import com.dhrashta.x.sensing.Posture
@@ -20,6 +22,7 @@ class RiskEngine {
         allowList: Set<String>,
         threatList: ThreatList,
         causalBonus: Int = 0,
+        recentEvents: List<Event> = emptyList(),
     ): Result {
         val signals = buildList {
             if (!a11y.isAccessibilityTool) add(SignalCatalogue.A1)
@@ -38,6 +41,9 @@ class RiskEngine {
             if (posture.newProfileAppeared) add(SignalCatalogue.D2)
             if (networkScore != null && networkScore > 0.7f) add(SignalCatalogue.E4)
             if (mlpResult != null && mlpResult.confidence > 0.8f) add(SignalCatalogue.E5)
+            if (recentEvents.any { it.pkg == identity.pkg && it.signalId == EventLogger.CANARY_READ }) {
+                add(SignalCatalogue.HIGH_TAINT_MATCH)
+            }
             if (a11y.isAccessibilityTool && identity.installer == PLAY_STORE) add(SignalCatalogue.N1)
             if (identity.pkg in allowList) add(SignalCatalogue.N2)
             if (identity.isSystemApp) add(SignalCatalogue.N3)
@@ -52,7 +58,8 @@ class RiskEngine {
         return Result(score, band, signals)
     }
 
-    private fun nameMimicsProtectedBrand(label: String, pkg: String): Boolean {
+    /** True if [label] or [pkg] is within one edit of a protected bank or government name. */
+    fun nameMimicsProtectedBrand(label: String, pkg: String): Boolean {
         val candidate = "$label $pkg".lowercase().replace(Regex("[^a-z0-9]"), "")
         return PROTECTED_NAMES.any { name ->
             candidate.contains(name) || candidate.windowed(name.length, 1, partialWindows = true)

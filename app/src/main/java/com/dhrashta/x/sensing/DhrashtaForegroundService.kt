@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.IBinder
 import android.util.Log
@@ -32,6 +33,8 @@ class DhrashtaForegroundService : Service() {
     private lateinit var observer: A11yObserver
     private lateinit var packageWatcher: PackageWatcher
     private lateinit var devicePostureWatcher: DevicePostureWatcher
+    private lateinit var usageWatcher: UsageWatcher
+    private lateinit var profileAppWatcher: ProfileAppWatcher
     private lateinit var identityResolver: IdentityResolver
     private lateinit var inspector: A11yInspector
     private lateinit var postureChecker: PostureChecker
@@ -78,9 +81,14 @@ class DhrashtaForegroundService : Service() {
             }
         }
         devicePostureWatcher = DevicePostureWatcher(this)
+        usageWatcher = UsageWatcher(this)
+        profileAppWatcher = ProfileAppWatcher(this)
         observer.start()
         packageWatcher.start()
         devicePostureWatcher.start()
+        usageWatcher.start()
+        profileAppWatcher.start()
+        NetworkPause.startDnsMonitor(this)
         EvaluationStateStore.update {
             it.copy(
                 monitoring = true,
@@ -95,6 +103,7 @@ class DhrashtaForegroundService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_SCAN) scanAllEnabledServices()
+        if (intent?.action == ACTION_EVALUATE) intent.getStringExtra(EXTRA_PACKAGE)?.let(::evaluateIfAccessibilityEnabled)
         return START_STICKY
     }
 
@@ -104,6 +113,8 @@ class DhrashtaForegroundService : Service() {
         observer.stop()
         packageWatcher.stop()
         devicePostureWatcher.stop()
+        usageWatcher.stop()
+        profileAppWatcher.stop()
         accessibilityModel.close()
         networkModel.close()
         explainer.close()
@@ -123,6 +134,14 @@ class DhrashtaForegroundService : Service() {
             }
         } else {
             findings.map(A11yFinding::packageName).distinct().forEach(::evaluateAsync)
+        }
+    }
+
+    /** Re-evaluates [pkg] on request from enforcement code, but only while it has an enabled a11y service. */
+    private fun evaluateIfAccessibilityEnabled(pkg: String) {
+        serviceScope.launch {
+            val enabled = runCatching { inspector.scan().any { it.packageName == pkg } }.getOrDefault(false)
+            if (enabled) evaluate(pkg) else Log.i(TAG, "Skipped re-evaluation of $pkg: no enabled accessibility service")
         }
     }
 
@@ -157,6 +176,7 @@ class DhrashtaForegroundService : Service() {
                 allowList = allowList,
                 threatList = threatList,
                 causalBonus = causalBonus,
+                recentEvents = recentEvents,
             )
             EventLogger.recordRisk(pkg, result.score, result.band.name)
             EventLogger.recordSignals(pkg, result)
@@ -252,6 +272,8 @@ class DhrashtaForegroundService : Service() {
 
     companion object {
         const val ACTION_SCAN = "com.dhrashta.x.action.SCAN"
+        const val ACTION_EVALUATE = "com.dhrashta.x.action.EVALUATE"
+        const val EXTRA_PACKAGE = "package"
         private const val TAG = "DhrashtaMonitor"
         private const val MONITOR_CHANNEL = "accessibility_monitor"
         private const val ALERT_CHANNEL = "threat_alerts"
@@ -261,5 +283,16 @@ class DhrashtaForegroundService : Service() {
         private const val UI_PREFS = "ui_preferences"
         private const val LANGUAGE_KEY = "language"
         private const val PLAY_STORE = "com.android.vending"
+
+        /** Asks the running monitor to re-evaluate [pkg] (skipped if it has no enabled accessibility service). */
+        fun requestEvaluation(context: Context, pkg: String) {
+            runCatching {
+                context.startService(
+                    Intent(context, DhrashtaForegroundService::class.java)
+                        .setAction(ACTION_EVALUATE)
+                        .putExtra(EXTRA_PACKAGE, pkg),
+                )
+            }.onFailure { Log.w(TAG, "Could not request re-evaluation of $pkg", it) }
+        }
     }
 }

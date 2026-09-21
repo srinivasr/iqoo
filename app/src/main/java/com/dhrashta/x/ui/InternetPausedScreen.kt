@@ -38,18 +38,31 @@ import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 
 @Composable
-fun InternetPausedScreen(onBack: () -> Unit, onResumeInternet: () -> Unit, onReviewPermissions: () -> Unit) {
+fun InternetPausedScreen(
+    risk: AppRisk,
+    blockedCount: Int,
+    lastBlocked: Long?,
+    onBack: () -> Unit,
+    onResumeInternet: () -> Unit,
+    onReviewPermissions: () -> Unit,
+    onUninstall: () -> Unit,
+) {
     BackHandler(onBack = onBack)
     Column(Modifier.fillMaxSize().background(Canvas).verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding)) {
         ScreenHeader("App controls", onBack)
         Spacer(Modifier.height(12.dp))
-        AppIdentity()
+        AppIdentity(risk.app)
         Spacer(Modifier.height(32.dp))
         Box(Modifier.size(48.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) {
             LineIcon(LineIconType.Check, Modifier.size(25.dp), Forest)
         }
         Text("Internet access paused", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 16.dp))
-        Text("QuickTools connections through DHRASHTA-X are blocked.", color = MutedInk, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(top = 9.dp))
+        Text(
+            "${risk.app.label} connections through DHRASHTAX are blocked.",
+            color = MutedInk,
+            style = MaterialTheme.typography.bodyLarge,
+            modifier = Modifier.padding(top = 9.dp),
+        )
         Spacer(Modifier.height(22.dp))
         Row(
             Modifier.fillMaxWidth().background(InfoSoft, RoundedCornerShape(8.dp)).padding(14.dp),
@@ -71,11 +84,18 @@ fun InternetPausedScreen(onBack: () -> Unit, onResumeInternet: () -> Unit, onRev
                 NextStep("2", "Remove it if you do not trust it")
             }
         }
-        Text("Pausing internet does not remove the app or its permissions.", color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 12.dp))
+        Text(
+            "Pausing internet does not remove the app or its permissions.",
+            color = MutedInk,
+            style = MaterialTheme.typography.bodyMedium,
+            modifier = Modifier.padding(top = 12.dp),
+        )
         Spacer(Modifier.height(24.dp))
         SecondaryAction("Resume internet", onResumeInternet)
         Spacer(Modifier.height(10.dp))
         SecondaryAction("Review permissions", onReviewPermissions)
+        Spacer(Modifier.height(10.dp))
+        SecondaryAction("Uninstall app", onUninstall)
         Spacer(Modifier.height(30.dp))
         SectionTitle("Activity")
         Spacer(Modifier.height(12.dp))
@@ -83,8 +103,15 @@ fun InternetPausedScreen(onBack: () -> Unit, onResumeInternet: () -> Unit, onRev
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(9.dp).background(Forest, CircleShape))
                 Column(Modifier.padding(start = 12.dp)) {
-                    Text("Internet access paused", style = MaterialTheme.typography.titleMedium)
-                    Text("Paused just now", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                    Text(
+                        if (blockedCount == 0) "No connection attempts yet" else "$blockedCount connection attempts blocked",
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                    Text(
+                        lastBlocked?.let { "Last attempt ${relativeTime(it)}" } ?: "Blocked attempts will appear here",
+                        color = MutedInk,
+                        style = MaterialTheme.typography.bodyMedium,
+                    )
                 }
             }
         }

@@ -19,6 +19,7 @@ object SignalCatalogue {
     val D2 = Signal("D2", 20, "New work profile appeared")
     val E4 = Signal("E4", 20, "Network anomaly score high")
     val E5 = Signal("E5", 20, "MLP predicts malicious behavior")
+    val HIGH_TAINT_MATCH = Signal("HIGH_TAINT_MATCH", 50, "Planted canary token seen leaving the device")
     val N1 = Signal("N1", -30, "isAccessibilityTool + Play install")
     val N2 = Signal("N2", -100, "On user allow-list")
     val N3 = Signal("N3", -40, "System pre-installed app")

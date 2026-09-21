@@ -27,6 +27,8 @@ val AmberSoft = Color(0xFFFFF1D6)
 val Info = Color(0xFF245B83)
 val InfoSoft = Color(0xFFE8F2F8)
 val Line = Color(0xFFE3E2DD)
+val Danger = Color(0xFF9B2C2C)
+val DangerSoft = Color(0xFFFBE9E7)
 
 private val Colors = lightColorScheme(
     primary = Forest,

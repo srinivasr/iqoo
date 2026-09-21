@@ -79,11 +79,12 @@ object CausalChains {
     private fun minutes(value: Long) = value * 60_000L
 }
 
-// TODO(causal-chains): event types below are declared in EventLogger but nothing emits them yet,
-// so the chains that need them cannot fire until a sensor is added:
-//   - beacon_unknown_host  (CC-2): needs per-app DNS/SNI visibility; GuardVpnService only sees paused apps.
-//   - bank_foreground      (CC-3): needs UsageStatsManager (PACKAGE_USAGE_STATS) foreground tracking.
-//   - canary_read / upload (CC-3): planned for Phase 2 (CanaryManager / CanaryMatcher).
-//   - cloned_app_launched  (CC-5): needs cross-profile launch visibility (UsageStats per profile).
-// Emitted today: sideload (PackageWatcher), a11y_enabled + privilege_change (A11yObserver),
-// adb_enabled + work_profile_created (DevicePostureWatcher, logged under EventLogger.DEVICE_PKG).
+// Event sources:
+// Per app: sideload (PackageWatcher), a11y_enabled + privilege_change (A11yObserver),
+// beacon_unknown_host (GuardVpnService DNS monitor + BeaconDetector, needs VPN consent),
+// canary_read + upload (GuardVpnService + CanaryMatcher; DNS lookups and paused apps only).
+// Device-wide under EventLogger.DEVICE_PKG: adb_enabled + work_profile_created (DevicePostureWatcher),
+// bank_foreground (UsageWatcher, needs Usage Access), cloned_app_launched (ProfileAppWatcher).
+// TODO(causal-chains): cloned_app_launched is a proxy that fires when a package is added to another
+// profile; true launch detection inside a work profile needs cross-user usage stats, which public
+// APIs do not expose.

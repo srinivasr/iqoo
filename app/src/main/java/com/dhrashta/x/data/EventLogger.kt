@@ -41,6 +41,24 @@ object EventLogger {
         return requireNotNull(database).riskScoreDao().observeRecent()
     }
 
+    /** Newest events first (rule signals and behavioural events). */
+    fun observeEvents(context: Context): Flow<List<Event>> {
+        init(context)
+        return requireNotNull(database).eventDao().observeRecent()
+    }
+
+    /** Newest blocked connections first. */
+    fun observeConnections(context: Context): Flow<List<Connection>> {
+        init(context)
+        return requireNotNull(database).connectionDao().observeRecent()
+    }
+
+    /** Latest risk score per package. */
+    fun observeLatestRiskScores(context: Context): Flow<List<RiskScore>> {
+        init(context)
+        return requireNotNull(database).riskScoreDao().observeLatestPerPackage()
+    }
+
     fun recordBlocked(uid: Int, remote: String = "unknown") {
         val db = database ?: return
         scope.launch {
