@@ -1,6 +1,7 @@
 package com.dhrashta.x.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
@@ -25,7 +26,9 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
+import com.dhrashta.x.R
 import com.dhrashta.x.data.AllowList
+import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.enforcement.CanaryManager
@@ -61,9 +64,13 @@ class MainActivity : ComponentActivity() {
             NetworkPause.startDnsMonitor(this)
             action?.invoke()
         } else {
-            toast("VPN permission is needed for network protection.")
+            toast(getString(R.string.toast_vpn_needed))
         }
         refresh()
+    }
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -71,11 +78,26 @@ class MainActivity : ComponentActivity() {
         EventLogger.init(applicationContext)
         ContextCompat.startForegroundService(this, Intent(this, DhrashtaForegroundService::class.java))
         NetworkPause.startDnsMonitor(this)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationsEnabled()) {
-            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        val firstRun = !AppLanguage.isChosen(this)
+        // Changing language recreates the Activity; stay on the picker when that happens.
+        if (firstRun || savedInstanceState?.getBoolean(STATE_ON_LANGUAGE) == true) {
+            destination = Screen.Language(firstRun)
+        } else {
+            requestNotificationsOnce()
         }
         tts = TextToSpeech(this) { status -> ttsReady = status == TextToSpeech.SUCCESS }
         setContent { DhrashtaTheme { AppContent() } }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(STATE_ON_LANGUAGE, destination is Screen.Language)
+    }
+
+    private fun requestNotificationsOnce() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationsEnabled()) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
     }
 
     override fun onResume() {
@@ -98,18 +120,18 @@ class MainActivity : ComponentActivity() {
         val events by remember { EventLogger.observeEvents(applicationContext) }.collectAsStateWithLifecycle(emptyList())
         val connections by remember { EventLogger.observeConnections(applicationContext) }.collectAsStateWithLifecycle(emptyList())
         val installed by produceState<List<InstalledApp>?>(null, tick) { value = loadInstalledApps(applicationContext) }
-        val models by produceState(emptyMap<String, Boolean>()) { value = withContext(Dispatchers.IO) { modelStatus() } }
+        val models by produceState(emptyMap<Int, Boolean>()) { value = withContext(Dispatchers.IO) { modelStatus() } }
         val pausedUids = remember(tick) { GuardVpnService.pausedUids(applicationContext) }
         val trusted = remember(tick) { AllowList.get(applicationContext) }
-        val language = remember(tick) { prefs().getString(LANGUAGE_KEY, "English") ?: "English" }
+        val language = remember(tick) { AppLanguage.current(this) }
 
         val apps = remember(installed, scores, events, pausedUids, trusted) {
-            installed?.let { assessApps(it, scores, events, pausedUids, trusted) }
+            installed?.let { assessApps(resources, it, scores, events, pausedUids, trusted) }
         }
         val labels = remember(installed) { installed.orEmpty().associate { it.pkg to it.label } }
         val packagesByUid = remember(installed) { installed.orEmpty().associate { it.uid to it.pkg } }
         val activity = remember(scores, events, connections, installed) {
-            buildActivity(scores, events, connections, labels, packagesByUid, installed.orEmpty())
+            buildActivity(resources, scores, events, connections, labels, packagesByUid, installed.orEmpty())
         }
         val status = remember(tick, evaluation.monitoring, models) {
             SettingsStatus(
@@ -123,8 +145,9 @@ class MainActivity : ComponentActivity() {
             )
         }
         val statusMessage = when {
-            evaluation.evaluating -> "Checking ${evaluation.packageName?.let { labels[it] ?: it } ?: "apps"}…"
-            else -> "Analysis stays on your phone."
+            evaluation.evaluating && evaluation.packageName != null ->
+                getString(R.string.home_status_checking, labels[evaluation.packageName] ?: evaluation.packageName)
+            else -> getString(R.string.home_status_private)
         }
 
         val screen = destination
@@ -136,6 +159,18 @@ class MainActivity : ComponentActivity() {
         }
 
         when (screen) {
+            is Screen.Language -> LanguagePickerScreen(
+                selectedTag = language.tag,
+                onSelect = { tag -> if (tag != language.tag) AppLanguage.apply(this, tag) },
+                onContinue = {
+                    if (screen.firstRun) {
+                        AppLanguage.markChosen(this)
+                        requestNotificationsOnce()
+                    }
+                    destination = if (screen.firstRun) Screen.Home else Screen.Settings
+                },
+                onBack = if (screen.firstRun) null else ({ destination = Screen.Settings }),
+            )
             Screen.Home -> DashboardScreen(
                 apps = apps,
                 monitoring = evaluation.monitoring,
@@ -165,12 +200,12 @@ class MainActivity : ComponentActivity() {
                 onNotifications = ::requestNotifications,
                 onContacts = { contactsPermission.launch(Manifest.permission.WRITE_CONTACTS) },
                 onAccessibilitySettings = { GuidedRecovery.openA11ySettings(this) },
-                onLanguage = { value -> prefs().edit().putString(LANGUAGE_KEY, value).apply(); refresh() },
+                onChangeLanguage = { destination = Screen.Language(firstRun = false) },
                 onUntrust = { pkg -> setTrusted(pkg, false) },
                 onOpenApp = { destination = Screen.Details(it) },
             )
             is Screen.Details -> if (risk == null) {
-                LoadingCard("Loading app…")
+                LoadingCard(getString(R.string.loading_app))
             } else {
                 RiskDetailsScreen(
                     risk = risk,
@@ -184,12 +219,12 @@ class MainActivity : ComponentActivity() {
                     onListen = ::speak,
                     onAnalyze = {
                         DhrashtaForegroundService.requestEvaluation(this, risk.app.pkg)
-                        toast("Analyzing ${risk.app.label}…")
+                        toast(getString(R.string.toast_analyzing, risk.app.label))
                     },
                 )
             }
             is Screen.Paused -> if (risk == null) {
-                LoadingCard("Loading app…")
+                LoadingCard(getString(R.string.loading_app))
             } else {
                 val blocked = connections.filter { it.uid == risk.app.uid }
                 InternetPausedScreen(
@@ -210,13 +245,13 @@ class MainActivity : ComponentActivity() {
             destination = Screen.Paused(risk.app.pkg)
             refreshSoon()
         } else {
-            toast("Could not pause ${risk.app.label}. Grant VPN permission and try again.")
+            toast(getString(R.string.toast_pause_failed, risk.app.label))
         }
     }
 
     private fun resume(risk: AppRisk) {
         NetworkPause.resume(this, risk.app.uid)
-        toast("Internet access resumed for ${risk.app.label}")
+        toast(getString(R.string.toast_resumed, risk.app.label))
         destination = Screen.Details(risk.app.pkg)
         refreshSoon()
     }
@@ -244,7 +279,7 @@ class MainActivity : ComponentActivity() {
             Intent(this, DhrashtaForegroundService::class.java).setAction(DhrashtaForegroundService.ACTION_SCAN),
         )
         refresh()
-        toast("Scanning apps…")
+        toast(getString(R.string.toast_scanning))
     }
 
     private fun requestNotifications() {
@@ -258,35 +293,29 @@ class MainActivity : ComponentActivity() {
     private fun openSettings(action: String) {
         runCatching { startActivity(Intent(action, Uri.parse("package:$packageName"))) }
             .recoverCatching { startActivity(Intent(action)) }
-            .onFailure { toast("This setting is not available on this phone.") }
+            .onFailure { toast(getString(R.string.toast_setting_unavailable)) }
     }
 
     private fun speak(text: String) {
         val engine = tts
-        if (engine == null || !ttsReady) {
-            toast("Text-to-speech is not ready on this phone.")
+        val locale = Locale(AppLanguage.currentTag(this), "IN")
+        if (engine == null || !ttsReady || engine.setLanguage(locale) < TextToSpeech.LANG_AVAILABLE) {
+            toast(getString(R.string.toast_tts_unavailable))
             return
-        }
-        engine.language = when (prefs().getString(LANGUAGE_KEY, "English")) {
-            "Hindi" -> Locale("hi", "IN")
-            "Bengali" -> Locale("bn", "IN")
-            else -> Locale("en", "IN")
         }
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "explanation")
     }
 
-    private fun modelStatus(): Map<String, Boolean> {
+    private fun modelStatus(): Map<Int, Boolean> {
         val assets = assets.list("").orEmpty().toSet()
         return linkedMapOf(
-            "Accessibility behaviour model" to ("accessibility_mlp.tflite" in assets),
-            "Network anomaly model" to ("network_anomaly.tflite" in assets),
-            "Explanation model (SmolLM2)" to ("smollm2_360m.gguf" in assets),
+            R.string.model_a11y to ("accessibility_mlp.tflite" in assets),
+            R.string.model_network to ("network_anomaly.tflite" in assets),
+            R.string.model_llm to ("smollm2_360m.gguf" in assets),
         )
     }
 
     private fun notificationsEnabled() = NotificationManagerCompat.from(this).areNotificationsEnabled()
-
-    private fun prefs() = getSharedPreferences(UI_PREFS, MODE_PRIVATE)
 
     private fun refresh() {
         refreshTick++
@@ -308,10 +337,10 @@ class MainActivity : ComponentActivity() {
         data object Settings : Screen
         data class Details(val pkg: String) : Screen
         data class Paused(val pkg: String) : Screen
+        data class Language(val firstRun: Boolean) : Screen
     }
 
     private companion object {
-        const val UI_PREFS = "ui_preferences"
-        const val LANGUAGE_KEY = "language"
+        const val STATE_ON_LANGUAGE = "on_language_screen"
     }
 }

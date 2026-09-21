@@ -19,16 +19,18 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
-import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dhrashta.x.BuildConfig
+import com.dhrashta.x.R
+import com.dhrashta.x.data.AppLanguage
+import com.dhrashta.x.ui.components.Chevron
 import com.dhrashta.x.ui.components.PrimaryAction
 import com.dhrashta.x.ui.components.QuietCard
 import com.dhrashta.x.ui.components.ScreenPadding
@@ -41,7 +43,7 @@ import com.dhrashta.x.ui.theme.ForestSoft
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 
-/** Live status of every sensor and permission the Settings tab shows. */
+/** Live status of every sensor and permission the Settings tab shows. Model keys are string resource IDs. */
 data class SettingsStatus(
     val monitoring: Boolean,
     val vpnConsent: Boolean,
@@ -49,17 +51,14 @@ data class SettingsStatus(
     val usageAccess: Boolean,
     val notifications: Boolean,
     val contacts: Boolean,
-    val models: Map<String, Boolean>,
+    val models: Map<Int, Boolean>,
 )
-
-/** Explanation languages LlmExplainer supports; the stored value is what it matches on. */
-val EXPLANATION_LANGUAGES = listOf("English" to "English", "Hindi" to "हिन्दी", "Bengali" to "বাংলা")
 
 @Composable
 fun SettingsScreen(
     status: SettingsStatus,
     trustedApps: List<InstalledApp>,
-    language: String,
+    language: AppLanguage.Option,
     onHome: () -> Unit,
     onActivity: () -> Unit,
     onScanNow: () -> Unit,
@@ -68,7 +67,7 @@ fun SettingsScreen(
     onNotifications: () -> Unit,
     onContacts: () -> Unit,
     onAccessibilitySettings: () -> Unit,
-    onLanguage: (String) -> Unit,
+    onChangeLanguage: () -> Unit,
     onUntrust: (String) -> Unit,
     onOpenApp: (String) -> Unit,
 ) {
@@ -76,65 +75,66 @@ fun SettingsScreen(
     Column(Modifier.fillMaxSize().background(Canvas)) {
         Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding)) {
             Spacer(Modifier.height(26.dp))
-            Text("Settings", style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(R.string.nav_settings), style = MaterialTheme.typography.headlineMedium)
             Text(
-                "Turn on each protection below. Everything runs on this phone.",
+                stringResource(R.string.settings_subtitle),
                 color = MutedInk,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 6.dp),
             )
             Spacer(Modifier.height(20.dp))
-            PrimaryAction("Scan apps now", onScanNow)
+            PrimaryAction(stringResource(R.string.action_scan_now), onScanNow)
 
             Spacer(Modifier.height(30.dp))
-            SectionTitle("Protection")
+            SectionTitle(stringResource(R.string.set_language))
+            Spacer(Modifier.height(12.dp))
+            QuietCard(Modifier.fillMaxWidth().clickable(onClick = onChangeLanguage)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text(language.nativeName, style = MaterialTheme.typography.titleMedium)
+                        Text(language.englishName, color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                    }
+                    Text(
+                        stringResource(R.string.set_change),
+                        color = Forest,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(end = 6.dp),
+                    )
+                    Chevron(color = Forest)
+                }
+            }
+
+            Spacer(Modifier.height(30.dp))
+            SectionTitle(stringResource(R.string.settings_protection))
             Spacer(Modifier.height(12.dp))
             QuietCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    SettingRow("Accessibility monitoring", "Checks every newly enabled accessibility service.", status.monitoring, "Starting", null)
+                    SettingRow(R.string.set_a11y_title, R.string.set_a11y_detail, status.monitoring, R.string.set_starting, null)
                     HorizontalDivider(color = Line)
-                    SettingRow(
-                        "Network beacon detection",
-                        "Watches DNS lookups for apps that call home on a timer. Uses a local VPN.",
-                        status.vpnConsent && status.dnsMonitor,
-                        "Turn on",
-                        onEnableDnsMonitor,
-                    )
+                    SettingRow(R.string.set_dns_title, R.string.set_dns_detail, status.vpnConsent && status.dnsMonitor, R.string.set_turn_on, onEnableDnsMonitor)
                     HorizontalDivider(color = Line)
-                    SettingRow(
-                        "Banking app watch",
-                        "Notices when a banking app opens, to catch data grabbed at that moment. Needs Usage access.",
-                        status.usageAccess,
-                        "Allow",
-                        onUsageAccess,
-                    )
+                    SettingRow(R.string.set_bank_title, R.string.set_bank_detail, status.usageAccess, R.string.set_allow, onUsageAccess)
                     HorizontalDivider(color = Line)
-                    SettingRow(
-                        "Decoy contact",
-                        "Adds a fake \"DHRASHTA Canary\" contact that only a data thief would send out.",
-                        status.contacts,
-                        "Allow",
-                        onContacts,
-                    )
+                    SettingRow(R.string.set_decoy_title, R.string.set_decoy_detail, status.contacts, R.string.set_allow, onContacts)
                     HorizontalDivider(color = Line)
-                    SettingRow("Threat alerts", "Notifications when a risky app is found.", status.notifications, "Allow", onNotifications)
+                    SettingRow(R.string.set_alerts_title, R.string.set_alerts_detail, status.notifications, R.string.set_allow, onNotifications)
                 }
             }
             Text(
-                "Open accessibility settings",
+                stringResource(R.string.set_open_a11y),
                 color = Forest,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clickable(onClick = onAccessibilitySettings).padding(vertical = 14.dp),
             )
 
             Spacer(Modifier.height(16.dp))
-            SectionTitle("Trusted apps")
+            SectionTitle(stringResource(R.string.set_trusted))
             Spacer(Modifier.height(12.dp))
             QuietCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     if (trustedApps.isEmpty()) {
                         Text(
-                            "No trusted apps. Mark an app as trusted from its details screen.",
+                            stringResource(R.string.set_trusted_empty),
                             color = MutedInk,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(vertical = 16.dp),
@@ -149,7 +149,7 @@ fun SettingsScreen(
                             AppIcon(app.pkg, app.label, Modifier.size(36.dp))
                             Text(app.label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).padding(horizontal = 12.dp))
                             Text(
-                                "Remove",
+                                stringResource(R.string.set_remove),
                                 color = Forest,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.clickable { onUntrust(app.pkg) }.padding(8.dp),
@@ -160,58 +160,33 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(30.dp))
-            SectionTitle("Explanation language")
-            Spacer(Modifier.height(12.dp))
-            QuietCard(Modifier.fillMaxWidth()) {
-                Column(Modifier.padding(horizontal = 6.dp)) {
-                    EXPLANATION_LANGUAGES.forEach { (value, label) ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable { onLanguage(value) }.padding(vertical = 4.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            RadioButton(
-                                selected = language == value,
-                                onClick = { onLanguage(value) },
-                                colors = RadioButtonDefaults.colors(selectedColor = Forest),
-                            )
-                            Text(label, style = MaterialTheme.typography.titleMedium)
-                        }
-                    }
-                }
-            }
-
-            Spacer(Modifier.height(30.dp))
-            SectionTitle("On-device AI")
+            SectionTitle(stringResource(R.string.set_ai))
             Spacer(Modifier.height(12.dp))
             QuietCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     status.models.entries.forEachIndexed { index, (name, installed) ->
                         if (index > 0) HorizontalDivider(color = Line)
                         Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(name, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                            StatusPill(if (installed) "Installed" else "Not installed", installed)
+                            Text(stringResource(name), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                            StatusPill(stringResource(if (installed) R.string.model_installed else R.string.model_missing), installed)
                         }
                     }
                 }
             }
             Text(
-                "Without a model file, that feature falls back to rules only.",
+                stringResource(R.string.set_ai_note),
                 color = MutedInk,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.padding(top = 10.dp),
             )
 
             Spacer(Modifier.height(30.dp))
-            SectionTitle("About")
+            SectionTitle(stringResource(R.string.set_about))
             Spacer(Modifier.height(12.dp))
             QuietCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("DHRASHTAX ${BuildConfig.VERSION_NAME}", style = MaterialTheme.typography.titleMedium)
-                    Text(
-                        "On-device threat detection. No app data leaves this phone.",
-                        color = MutedInk,
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
+                    Text(stringResource(R.string.about_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleMedium)
+                    Text(stringResource(R.string.about_text), color = MutedInk, style = MaterialTheme.typography.bodyMedium)
                 }
             }
             Spacer(Modifier.height(24.dp))
@@ -221,17 +196,17 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingRow(title: String, detail: String, on: Boolean, actionLabel: String, onAction: (() -> Unit)?) {
+private fun SettingRow(title: Int, detail: Int, on: Boolean, actionLabel: Int, onAction: (() -> Unit)?) {
     Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
-            Text(title, style = MaterialTheme.typography.titleMedium)
-            Text(detail, color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
+            Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(detail), color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
         }
         if (on || onAction == null) {
-            StatusPill(if (on) "On" else actionLabel, on)
+            StatusPill(stringResource(if (on) R.string.set_on else actionLabel), on)
         } else {
             Text(
-                actionLabel,
+                stringResource(actionLabel),
                 color = androidx.compose.ui.graphics.Color.White,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,

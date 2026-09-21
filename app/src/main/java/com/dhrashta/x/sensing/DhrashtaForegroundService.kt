@@ -14,6 +14,7 @@ import com.dhrashta.x.ai.AccessibilityFeatureExtractor
 import com.dhrashta.x.ai.AccessibilityMlpClassifier
 import com.dhrashta.x.ai.LlmExplainer
 import com.dhrashta.x.ai.NetworkAnomalyModel
+import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.decision.CausalChains
@@ -44,6 +45,10 @@ class DhrashtaForegroundService : Service() {
     private lateinit var networkModel: NetworkAnomalyModel
     private lateinit var explainer: LlmExplainer
     private val riskEngine = RiskEngine()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -228,7 +233,7 @@ class DhrashtaForegroundService : Service() {
     ) = withContext(Dispatchers.Main) {
         val notification = NotificationCompat.Builder(this@DhrashtaForegroundService, ALERT_CHANNEL)
             .setSmallIcon(R.drawable.ic_shield)
-            .setContentTitle("${result.band.name.lowercase().replaceFirstChar(Char::uppercase)} accessibility risk: $appLabel")
+            .setContentTitle(getString(R.string.notif_risk_title, getString(bandLabel(result.band)), appLabel))
             .setContentText(explanation)
             .setStyle(NotificationCompat.BigTextStyle().bigText(explanation))
             .setPriority(NotificationCompat.PRIORITY_HIGH)
@@ -245,6 +250,13 @@ class DhrashtaForegroundService : Service() {
         getSystemService(NotificationManager::class.java).notify(pkg.hashCode(), notification)
     }
 
+    private fun bandLabel(band: RiskEngine.Band): Int = when (band) {
+        RiskEngine.Band.CRITICAL -> R.string.badge_critical
+        RiskEngine.Band.HIGH -> R.string.badge_high
+        RiskEngine.Band.REVIEW -> R.string.badge_review
+        RiskEngine.Band.SAFE -> R.string.badge_low
+    }
+
     private fun createChannels() {
         val manager = getSystemService(NotificationManager::class.java)
         manager.createNotificationChannel(
@@ -257,8 +269,8 @@ class DhrashtaForegroundService : Service() {
 
     private fun monitorNotification() = NotificationCompat.Builder(this, MONITOR_CHANNEL)
         .setSmallIcon(R.drawable.ic_shield)
-        .setContentTitle("DHRASHTA-X is monitoring")
-        .setContentText("Watching for newly enabled accessibility services")
+        .setContentTitle(getString(R.string.notif_monitor_title))
+        .setContentText(getString(R.string.notif_monitor_text))
         .setOngoing(true)
         .setContentIntent(
             PendingIntent.getActivity(

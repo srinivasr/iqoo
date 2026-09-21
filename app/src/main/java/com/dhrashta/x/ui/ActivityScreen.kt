@@ -1,9 +1,11 @@
 package com.dhrashta.x.ui
 
+import android.content.res.Resources
 import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -16,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
@@ -29,8 +32,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import com.dhrashta.x.R
 import com.dhrashta.x.data.Connection
 import com.dhrashta.x.data.Event
 import com.dhrashta.x.data.EventLogger
@@ -58,11 +64,12 @@ data class ActivityItem(
 )
 
 /**
- * Builds the timeline from Room: engine reviews, behavioural events and blocked connections.
- * Rule-signal rows are skipped here (they are shown as evidence on the app screen), and blocked
- * connections are grouped per app per minute so the list stays readable.
+ * Builds the timeline from Room: engine reviews, behavioural events, blocked connections and
+ * recent installs. Rule-signal rows are skipped here (they are shown as evidence on the app
+ * screen), and blocked connections are grouped per app per minute so the list stays readable.
  */
 fun buildActivity(
+    res: Resources,
     scores: List<RiskScore>,
     events: List<Event>,
     connections: List<Connection>,
@@ -78,22 +85,22 @@ fun buildActivity(
             key = "score-${score.id}",
             timestamp = score.timestamp,
             kind = if (level >= RiskLevel.High) ActivityKind.Alert else ActivityKind.Review,
-            title = "${name(score.pkg)} reviewed",
-            detail = "Risk score ${score.score} · ${levelText(level)}",
+            title = res.getString(R.string.act_reviewed, name(score.pkg)),
+            detail = res.getString(R.string.act_score_detail, score.score, levelText(res, level)),
             pkg = score.pkg,
         )
     }
     events.forEach { event ->
         val device = event.pkg == EventLogger.DEVICE_PKG
         val (kind, title) = when (event.signalId) {
-            EventLogger.CANARY_READ -> ActivityKind.Alert to "${name(event.pkg)} sent decoy data off the device"
-            EventLogger.BEACON_UNKNOWN_HOST -> ActivityKind.Network to "${name(event.pkg)} contacted a server on a fixed schedule"
-            EventLogger.A11Y_ENABLED -> ActivityKind.Review to "Accessibility access turned on for ${name(event.pkg)}"
-            EventLogger.SIDELOAD -> ActivityKind.Review to "${name(event.pkg)} installed outside Play Store"
-            EventLogger.BANK_FOREGROUND -> ActivityKind.Device to "Banking app opened"
-            EventLogger.ADB_ENABLED -> ActivityKind.Device to "USB or wireless debugging turned on"
-            EventLogger.WORK_PROFILE_CREATED -> ActivityKind.Device to "Work profile created"
-            EventLogger.CLONED_APP_LAUNCHED -> ActivityKind.Device to "An app was added to a second profile"
+            EventLogger.CANARY_READ -> ActivityKind.Alert to res.getString(R.string.act_canary, name(event.pkg))
+            EventLogger.BEACON_UNKNOWN_HOST -> ActivityKind.Network to res.getString(R.string.act_beacon, name(event.pkg))
+            EventLogger.A11Y_ENABLED -> ActivityKind.Review to res.getString(R.string.act_a11y, name(event.pkg))
+            EventLogger.SIDELOAD -> ActivityKind.Review to res.getString(R.string.act_sideload, name(event.pkg))
+            EventLogger.BANK_FOREGROUND -> ActivityKind.Device to res.getString(R.string.act_bank)
+            EventLogger.ADB_ENABLED -> ActivityKind.Device to res.getString(R.string.act_adb)
+            EventLogger.WORK_PROFILE_CREATED -> ActivityKind.Device to res.getString(R.string.act_work_profile)
+            EventLogger.CLONED_APP_LAUNCHED -> ActivityKind.Device to res.getString(R.string.act_cloned)
             else -> return@forEach
         }
         items += ActivityItem(
@@ -101,7 +108,7 @@ fun buildActivity(
             timestamp = event.timestamp,
             kind = kind,
             title = title,
-            detail = if (device) "On this phone" else event.pkg,
+            detail = if (device) res.getString(R.string.act_on_phone) else event.pkg,
             pkg = event.pkg.takeUnless { device },
         )
     }
@@ -113,8 +120,8 @@ fun buildActivity(
                 key = "blocked-${group.first}-${group.second}",
                 timestamp = rows.maxOf { it.timestamp },
                 kind = ActivityKind.Network,
-                title = "${rows.size} connection${if (rows.size == 1) "" else "s"} blocked",
-                detail = pkg?.let(::name) ?: "App UID ${group.first}",
+                title = res.getQuantityString(R.plurals.act_blocked, rows.size, rows.size),
+                detail = pkg?.let(::name) ?: res.getString(R.string.act_app_uid, group.first),
                 pkg = pkg,
             )
         }
@@ -124,8 +131,8 @@ fun buildActivity(
             key = "install-${app.pkg}",
             timestamp = app.firstInstallTime,
             kind = if (app.sideloaded) ActivityKind.Review else ActivityKind.Device,
-            title = "${app.label} installed",
-            detail = sourceText(app),
+            title = res.getString(R.string.act_installed, app.label),
+            detail = sourceText(res, app),
             pkg = app.pkg,
         )
     }
@@ -134,21 +141,29 @@ fun buildActivity(
 
 private const val INSTALL_HISTORY_MILLIS = 30 * DateUtils.DAY_IN_MILLIS
 
-fun levelText(level: RiskLevel) = when (level) {
-    RiskLevel.Safe -> "No issues found"
-    RiskLevel.Review -> "Review recommended"
-    RiskLevel.High -> "High risk"
-    RiskLevel.Critical -> "Critical risk"
-}
+/** Localised name of a risk level. */
+fun levelText(res: Resources, level: RiskLevel): String = res.getString(
+    when (level) {
+        RiskLevel.Safe -> R.string.level_safe
+        RiskLevel.Review -> R.string.badge_review
+        RiskLevel.High -> R.string.badge_high
+        RiskLevel.Critical -> R.string.badge_critical
+    },
+)
 
-/** Relative time such as "5 minutes ago". */
-fun relativeTime(timestamp: Long): String {
+/** Relative time such as "5 minutes ago", in the app language. */
+fun relativeTime(res: Resources, timestamp: Long): String {
     val now = System.currentTimeMillis()
-    if (now - timestamp < DateUtils.MINUTE_IN_MILLIS) return "Just now"
+    if (now - timestamp < DateUtils.MINUTE_IN_MILLIS) return res.getString(R.string.just_now)
     return DateUtils.getRelativeTimeSpanString(timestamp, now, DateUtils.MINUTE_IN_MILLIS).toString()
 }
 
-private enum class ActivityFilter(val label: String) { All("All"), Alerts("Alerts"), Network("Network"), Device("Device") }
+private enum class ActivityFilter(val label: Int) {
+    All(R.string.filter_all),
+    Alerts(R.string.filter_alerts),
+    Network(R.string.filter_network),
+    Device(R.string.filter_device),
+}
 
 @Composable
 fun ActivityScreen(
@@ -172,19 +187,22 @@ fun ActivityScreen(
         LazyColumn(Modifier.weight(1f).padding(horizontal = ScreenPadding)) {
             item {
                 Spacer(Modifier.height(26.dp))
-                Text("Activity", style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.nav_activity), style = MaterialTheme.typography.headlineMedium)
                 Text(
-                    "Everything DHRASHTAX noticed, newest first.",
+                    stringResource(R.string.activity_subtitle),
                     color = MutedInk,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(top = 6.dp),
                 )
-                Row(Modifier.padding(vertical = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()).padding(vertical = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     ActivityFilter.entries.forEach { option ->
                         FilterChip(
                             selected = filter == option,
                             onClick = { filter = option },
-                            label = { Text(option.label) },
+                            label = { Text(stringResource(option.label)) },
                             colors = FilterChipDefaults.filterChipColors(
                                 selectedContainerColor = ForestSoft,
                                 selectedLabelColor = Forest,
@@ -197,9 +215,9 @@ fun ActivityScreen(
                 item {
                     QuietCard(Modifier.fillMaxWidth()) {
                         Column(Modifier.padding(20.dp)) {
-                            Text("Nothing here yet", style = MaterialTheme.typography.titleMedium)
+                            Text(stringResource(R.string.activity_empty_title), style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "Reviews, blocked connections and device changes will appear here as they happen.",
+                                stringResource(R.string.activity_empty_detail),
                                 color = MutedInk,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(top = 4.dp),
@@ -220,6 +238,7 @@ fun ActivityScreen(
 
 @Composable
 fun ActivityRow(item: ActivityItem, labels: Map<String, String>, onOpenApp: (String) -> Unit) {
+    val res = LocalContext.current.resources
     val pkg = item.pkg
     val clickable = pkg != null && pkg in labels
     QuietCard(Modifier.fillMaxWidth().then(if (clickable) Modifier.clickable { onOpenApp(pkg!!) } else Modifier)) {
@@ -234,7 +253,7 @@ fun ActivityRow(item: ActivityItem, labels: Map<String, String>, onOpenApp: (Str
             Column(Modifier.weight(1f).padding(start = 12.dp)) {
                 Text(item.title, style = MaterialTheme.typography.titleMedium, maxLines = 2, overflow = TextOverflow.Ellipsis)
                 Text(
-                    "${relativeTime(item.timestamp)} · ${item.detail}",
+                    "${relativeTime(res, item.timestamp)} · ${item.detail}",
                     color = MutedInk,
                     style = MaterialTheme.typography.bodyMedium,
                     maxLines = 1,

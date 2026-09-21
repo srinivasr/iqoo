@@ -28,6 +28,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
+import com.dhrashta.x.R
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -82,7 +87,7 @@ fun AppIdentity(app: InstalledApp, compact: Boolean = false) {
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(app.label, style = MaterialTheme.typography.titleMedium)
             Text(
-                app.versionName?.let { "Version $it" } ?: app.pkg,
+                app.versionName?.let { stringResource(R.string.version_label, it) } ?: app.pkg,
                 color = MutedInk,
                 style = MaterialTheme.typography.bodyMedium,
             )
@@ -93,14 +98,15 @@ fun AppIdentity(app: InstalledApp, compact: Boolean = false) {
 /** Coloured pill for a risk level: green safe, amber review, red high/critical. */
 @Composable
 fun RiskBadge(level: RiskLevel, trusted: Boolean = false, paused: Boolean = false) {
-    val (text, fg, bg) = when {
-        paused -> Triple("Paused", Info, InfoSoft)
-        trusted -> Triple("Trusted", Forest, ForestSoft)
-        level == RiskLevel.Critical -> Triple("Critical risk", Color.White, Danger)
-        level == RiskLevel.High -> Triple("High risk", Danger, DangerSoft)
-        level == RiskLevel.Review -> Triple("Review recommended", Amber, AmberSoft)
-        else -> Triple("Low risk", Forest, ForestSoft)
+    val (textRes, fg, bg) = when {
+        paused -> Triple(R.string.badge_paused, Info, InfoSoft)
+        trusted -> Triple(R.string.badge_trusted, Forest, ForestSoft)
+        level == RiskLevel.Critical -> Triple(R.string.badge_critical, Color.White, Danger)
+        level == RiskLevel.High -> Triple(R.string.badge_high, Danger, DangerSoft)
+        level == RiskLevel.Review -> Triple(R.string.badge_review, Amber, AmberSoft)
+        else -> Triple(R.string.badge_low, Forest, ForestSoft)
     }
+    val text = stringResource(textRes)
     Text(
         text = text,
         color = fg,
@@ -135,13 +141,14 @@ fun SecondaryAction(text: String, onClick: () -> Unit, modifier: Modifier = Modi
 
 @Composable
 fun Chevron(direction: ChevronDirection = ChevronDirection.Right, color: Color = Ink) {
+    val mirror = LocalLayoutDirection.current == LayoutDirection.Rtl && direction == ChevronDirection.Right
     Canvas(Modifier.size(18.dp)) {
         val path = Path()
         when (direction) {
             ChevronDirection.Right -> { path.moveTo(size.width * .35f, size.height * .2f); path.lineTo(size.width * .65f, size.height * .5f); path.lineTo(size.width * .35f, size.height * .8f) }
             ChevronDirection.Down -> { path.moveTo(size.width * .2f, size.height * .35f); path.lineTo(size.width * .5f, size.height * .65f); path.lineTo(size.width * .8f, size.height * .35f) }
         }
-        drawPath(path, color, style = Stroke(width = 2.2f, cap = StrokeCap.Round))
+        scale(if (mirror) -1f else 1f, 1f) { drawPath(path, color, style = Stroke(width = 2.2f, cap = StrokeCap.Round)) }
     }
 }
 

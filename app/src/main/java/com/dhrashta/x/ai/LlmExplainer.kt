@@ -2,6 +2,7 @@ package com.dhrashta.x.ai
 
 import android.content.Context
 import android.util.Log
+import com.dhrashta.x.R
 import com.google.mediapipe.tasks.genai.llminference.LlmInference
 import java.io.File
 
@@ -49,11 +50,9 @@ class LlmExplainer(private val context: Context) : AutoCloseable {
         return LlmInference.createFromOptions(context, options)
     }
 
-    private fun fallback(appName: String, language: String): String = when (language.lowercase()) {
-        "hindi", "hi" -> "$appName ने इंस्टॉल होने के तुरंत बाद Accessibility access मांगा और यह पंजीकृत accessibility tool नहीं है। यह आपकी स्क्रीन पढ़ सकता है। कृपया इसकी जांच करें और जरूरत न हो तो हटाएं।"
-        "bengali", "bangla", "bn" -> "$appName ইনস্টল হওয়ার কিছুক্ষণের মধ্যেই Accessibility access চেয়েছে এবং এটি নিবন্ধিত accessibility tool নয়। এটি আপনার স্ক্রিন পড়তে পারে। অ্যাপটি পরীক্ষা করুন এবং প্রয়োজন না হলে সরিয়ে দিন।"
-        else -> "This app ($appName) requested Accessibility access shortly after install and is not a registered accessibility tool. It may be able to read your screen. Please review and remove it."
-    }
+    /** Localised rule-based explanation; [context] is already set to the app language. */
+    @Suppress("UNUSED_PARAMETER")
+    private fun fallback(appName: String, language: String): String = context.getString(R.string.explainer_fallback, appName)
 
     override fun close() {
         inference?.close()

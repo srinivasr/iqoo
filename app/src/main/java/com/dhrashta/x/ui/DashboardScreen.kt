@@ -37,7 +37,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import android.content.res.Resources
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -94,12 +99,12 @@ fun DashboardScreen(
                     }
                 }
                 Spacer(Modifier.height(26.dp))
-                Text("App protection", style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(14.dp))
                 Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
                     Box(Modifier.size(8.dp).background(if (monitoring) Forest else Amber, CircleShape))
                     Text(
-                        if (monitoring) "Monitoring active" else "Monitoring is starting",
+                        stringResource(if (monitoring) R.string.home_monitoring_active else R.string.home_monitoring_starting),
                         color = if (monitoring) Forest else Amber,
                         style = MaterialTheme.typography.titleMedium,
                     )
@@ -112,16 +117,16 @@ fun DashboardScreen(
                 )
                 Spacer(Modifier.height(24.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MetricCard(apps?.count { !it.app.isSystem }?.toString() ?: "–", "apps checked", Modifier.weight(1f))
-                    MetricCard(if (apps == null) "–" else attention.size.toString(), "to review", Modifier.weight(1f))
-                    MetricCard(if (apps == null) "–" else paused.toString(), "paused", Modifier.weight(1f))
+                    MetricCard(apps?.count { !it.app.isSystem }?.toString() ?: "–", stringResource(R.string.metric_apps_checked), Modifier.weight(1f))
+                    MetricCard(if (apps == null) "–" else attention.size.toString(), stringResource(R.string.metric_to_review), Modifier.weight(1f))
+                    MetricCard(if (apps == null) "–" else paused.toString(), stringResource(R.string.metric_paused), Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(34.dp))
-                SectionTitle("Needs your attention")
+                SectionTitle(stringResource(R.string.home_needs_attention))
                 Spacer(Modifier.height(13.dp))
             }
             when {
-                apps == null -> item { LoadingCard("Checking installed apps…") }
+                apps == null -> item { LoadingCard(stringResource(R.string.home_loading_apps)) }
                 attention.isEmpty() -> item {
                     QuietCard(Modifier.fillMaxWidth()) {
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -129,8 +134,8 @@ fun DashboardScreen(
                                 LineIcon(LineIconType.Check, Modifier.size(20.dp), Forest)
                             }
                             Column(Modifier.padding(start = 12.dp)) {
-                                Text("All clear", style = MaterialTheme.typography.titleMedium)
-                                Text("No installed app needs a review right now.", color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                                Text(stringResource(R.string.home_all_clear), style = MaterialTheme.typography.titleMedium)
+                                Text(stringResource(R.string.home_all_clear_detail), color = MutedInk, style = MaterialTheme.typography.bodyMedium)
                             }
                         }
                     }
@@ -143,10 +148,10 @@ fun DashboardScreen(
             item {
                 Spacer(Modifier.height(22.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    SectionTitle("Recent activity", Modifier.weight(1f))
+                    SectionTitle(stringResource(R.string.home_recent_activity), Modifier.weight(1f))
                     if (recent.isNotEmpty()) {
                         Text(
-                            "See all",
+                            stringResource(R.string.home_see_all),
                             color = Forest,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clickable(onClick = onActivity).padding(8.dp),
@@ -159,7 +164,7 @@ fun DashboardScreen(
                         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                             LineIcon(LineIconType.Activity, Modifier.size(22.dp), MutedInk)
                             Text(
-                                "No activity yet. Reviews and blocked connections appear here.",
+                                stringResource(R.string.home_no_activity),
                                 color = MutedInk,
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(start = 12.dp),
@@ -174,12 +179,12 @@ fun DashboardScreen(
             }
             item {
                 Spacer(Modifier.height(24.dp))
-                SectionTitle(if (apps == null) "Installed apps" else "Installed apps (${listed.size})")
+                SectionTitle(if (apps == null) stringResource(R.string.home_installed_apps) else stringResource(R.string.home_installed_apps_count, listed.size))
                 Spacer(Modifier.height(12.dp))
                 OutlinedTextField(
                     value = query,
                     onValueChange = { query = it },
-                    placeholder = { Text("Search apps") },
+                    placeholder = { Text(stringResource(R.string.home_search_apps)) },
                     singleLine = true,
                     shape = RoundedCornerShape(10.dp),
                     modifier = Modifier.fillMaxWidth(),
@@ -188,13 +193,13 @@ fun DashboardScreen(
                     FilterChip(
                         selected = showSystem,
                         onClick = { showSystem = !showSystem },
-                        label = { Text("Show system apps") },
+                        label = { Text(stringResource(R.string.home_show_system)) },
                         colors = FilterChipDefaults.filterChipColors(selectedContainerColor = ForestSoft, selectedLabelColor = Forest),
                     )
                 }
             }
             if (apps != null && listed.isEmpty()) {
-                item { Text("No apps match your search.", color = MutedInk, modifier = Modifier.padding(vertical = 12.dp)) }
+                item { Text(stringResource(R.string.home_no_match), color = MutedInk, modifier = Modifier.padding(vertical = 12.dp)) }
             }
             items(listed, key = { "app-${it.app.pkg}" }) { risk ->
                 AppRow(risk) { onOpenApp(risk.app.pkg) }
@@ -215,7 +220,7 @@ private fun AttentionCard(risk: AppRisk, onClick: () -> Unit) {
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
                     Text(risk.app.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     Text(
-                        risk.evidence.firstOrNull()?.title ?: "Risk score ${risk.score}",
+                        risk.evidence.firstOrNull()?.title ?: stringResource(R.string.score_short, risk.score),
                         color = MutedInk,
                         style = MaterialTheme.typography.bodyMedium,
                         maxLines = 1,
@@ -228,7 +233,7 @@ private fun AttentionCard(risk: AppRisk, onClick: () -> Unit) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 RiskBadge(risk.level, risk.trusted, risk.paused)
                 Text(
-                    "Score ${risk.score}",
+                    stringResource(R.string.score_short, risk.score),
                     color = MutedInk,
                     style = MaterialTheme.typography.bodyMedium,
                     modifier = Modifier.padding(start = 10.dp),
@@ -256,7 +261,7 @@ private fun AppRow(risk: AppRisk, onClick: () -> Unit) {
         Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
             Text(risk.app.label, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                sourceText(risk.app),
+                sourceText(LocalContext.current.resources, risk.app),
                 color = MutedInk,
                 style = MaterialTheme.typography.bodyMedium,
                 maxLines = 1,
@@ -280,11 +285,11 @@ private fun StatusDot(risk: AppRisk) {
 }
 
 /** Where an app came from, in plain words. */
-fun sourceText(app: InstalledApp): String = when {
-    app.isSystem -> "Pre-installed"
-    !app.sideloaded -> "Play Store"
-    app.installerLabel != null -> "Installed by ${app.installerLabel}"
-    else -> "Installed outside Play Store"
+fun sourceText(res: Resources, app: InstalledApp): String = when {
+    app.isSystem -> res.getString(R.string.source_preinstalled)
+    !app.sideloaded -> res.getString(R.string.source_play_store)
+    app.installerLabel != null -> res.getString(R.string.source_installed_by, app.installerLabel)
+    else -> res.getString(R.string.source_outside_play)
 }
 
 @Composable
@@ -315,9 +320,9 @@ fun BottomNavigation(active: BottomDestination, onHome: () -> Unit, onActivity: 
         Modifier.fillMaxWidth().background(Surface).padding(top = 9.dp).navigationBarsPadding(),
         horizontalArrangement = Arrangement.SpaceAround,
     ) {
-        BottomItem("Home", LineIconType.Home, active == BottomDestination.Home, onHome)
-        BottomItem("Activity", LineIconType.Activity, active == BottomDestination.Activity, onActivity)
-        BottomItem("Settings", LineIconType.Settings, active == BottomDestination.Settings, onSettings)
+        BottomItem(stringResource(R.string.nav_home), LineIconType.Home, active == BottomDestination.Home, onHome)
+        BottomItem(stringResource(R.string.nav_activity), LineIconType.Activity, active == BottomDestination.Activity, onActivity)
+        BottomItem(stringResource(R.string.nav_settings), LineIconType.Settings, active == BottomDestination.Settings, onSettings)
     }
 }
 
@@ -337,7 +342,9 @@ enum class LineIconType { Home, Activity, Settings, Chevron, Back, Speaker, Chec
 
 @Composable
 fun LineIcon(type: LineIconType, modifier: Modifier = Modifier, color: Color = Ink) {
-    Canvas(modifier) {
+    val mirror = LocalLayoutDirection.current == LayoutDirection.Rtl &&
+        (type == LineIconType.Chevron || type == LineIconType.Back)
+    Canvas(modifier) { scale(if (mirror) -1f else 1f, 1f) {
         val stroke = Stroke(width = 2.1f, cap = StrokeCap.Round)
         val w = size.width
         val h = size.height
@@ -365,5 +372,5 @@ fun LineIcon(type: LineIconType, modifier: Modifier = Modifier, color: Color = I
             }
             LineIconType.Check -> { drawLine(color, Offset(w * .2f, h * .52f), Offset(w * .42f, h * .72f), strokeWidth = 2.8f, cap = StrokeCap.Round); drawLine(color, Offset(w * .42f, h * .72f), Offset(w * .82f, h * .27f), strokeWidth = 2.8f, cap = StrokeCap.Round) }
         }
-    }
+    } }
 }

@@ -3,6 +3,7 @@ package com.dhrashta.x.enforcement
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.ConnectivityManager
@@ -12,6 +13,7 @@ import android.os.Process
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.dhrashta.x.R
+import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.sensing.DhrashtaForegroundService
@@ -37,6 +39,10 @@ class GuardVpnService : VpnService() {
     private var drainJob: Job? = null
     private var monitorEnabled = false
     private val packageByUid = ConcurrentHashMap<Int, String>()
+
+    override fun attachBaseContext(newBase: Context) {
+        super.attachBaseContext(AppLanguage.wrap(newBase))
+    }
 
     override fun onCreate() {
         super.onCreate()
@@ -245,12 +251,12 @@ class GuardVpnService : VpnService() {
 
     private fun notification() = NotificationCompat.Builder(this, CHANNEL)
         .setSmallIcon(R.drawable.ic_shield)
-        .setContentTitle(if (pausedUids.isEmpty()) "DHRASHTA-X DNS monitor active" else "DHRASHTA-X containment active")
+        .setContentTitle(getString(if (pausedUids.isEmpty()) R.string.notif_dns_title else R.string.notif_contain_title))
         .setContentText(
             if (pausedUids.isEmpty()) {
-                "Watching DNS lookups for beaconing apps"
+                getString(R.string.notif_dns_text)
             } else {
-                "Network access is paused for ${pausedUids.size} risky app UID(s)"
+                resources.getQuantityString(R.plurals.notif_contain_text, pausedUids.size, pausedUids.size)
             },
         )
         .setOngoing(true)

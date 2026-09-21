@@ -2,6 +2,7 @@ package com.dhrashta.x.ui
 
 import android.Manifest
 import android.content.Context
+import android.content.res.Resources
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.graphics.drawable.toBitmap
+import com.dhrashta.x.R
 import com.dhrashta.x.data.Event
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.data.RiskScore
@@ -153,6 +155,7 @@ private val SIGNALS_BY_ID = listOf(
  * with the same weights and 30/60/90 bands as RiskEngine.
  */
 fun assessApps(
+    res: Resources,
     apps: List<InstalledApp>,
     latestScores: List<RiskScore>,
     events: List<Event>,
@@ -163,26 +166,22 @@ fun assessApps(
     val eventsByPkg = events.groupBy { it.pkg }
     return apps.map { app ->
         val appEvents = eventsByPkg[app.pkg].orEmpty()
+        fun evs(title: Int, detail: String, weight: Int) = Evidence(res.getString(title), detail, weight)
+        fun ev(title: Int, detail: Int, weight: Int) = evs(title, res.getString(detail), weight)
         val evidence = buildList {
-            if (app.inThreatList) add(Evidence("Matches a known threat", "This app is on the local threat list.", 50))
-            if (appEvents.any { it.signalId == EventLogger.CANARY_READ }) {
-                add(Evidence("Sent decoy data off the device", "A planted DHRX decoy value was seen leaving this phone.", 50))
-            }
-            if (appEvents.any { it.signalId == EventLogger.BEACON_UNKNOWN_HOST }) {
-                add(Evidence("Repeated server connections", "Looked up the same unknown server on a fixed schedule.", 15))
-            }
-            if (app.a11yEnabled && !app.a11yIsTool) {
-                add(Evidence("Accessibility access enabled", "Can read your screen and act on your behalf.", 15))
-            }
+            if (app.inThreatList) add(ev(R.string.ev_threat_title, R.string.ev_threat_detail, 50))
+            if (appEvents.any { it.signalId == EventLogger.CANARY_READ }) add(ev(R.string.ev_canary_title, R.string.ev_canary_detail, 50))
+            if (appEvents.any { it.signalId == EventLogger.BEACON_UNKNOWN_HOST }) add(ev(R.string.ev_beacon_title, R.string.ev_beacon_detail, 15))
+            if (app.a11yEnabled && !app.a11yIsTool) add(ev(R.string.ev_a11y_title, R.string.ev_a11y_detail, 15))
             if (app.sideloaded) {
-                val source = app.installerLabel ?: "an unknown source"
-                add(Evidence("Installed outside Play Store", "Installed by $source. Source alone does not prove risk.", 15))
+                val source = app.installerLabel ?: res.getString(R.string.source_unknown)
+                add(evs(R.string.ev_sideload_title, res.getString(R.string.ev_sideload_detail, source), 15))
             }
-            if (app.mimicsBrand) add(Evidence("Name resembles a bank or government app", "Look-alike names are common in fake apps.", 20))
-            if (!app.hasLauncher && !app.isSystem) add(Evidence("Hidden from app drawer", "Has no launcher icon, so it is easy to miss.", 15))
-            if (app.readsSms) add(Evidence("Can read your SMS", "Includes one-time passwords sent by banks.", 10))
-            if (app.requestsOverlay) add(Evidence("Can draw over other apps", "Could show screens on top of banking apps.", 10))
-            if (app.installsPackages) add(Evidence("Can install other apps", "May download and install more apps.", 5))
+            if (app.mimicsBrand) add(ev(R.string.ev_brand_title, R.string.ev_brand_detail, 20))
+            if (!app.hasLauncher && !app.isSystem) add(ev(R.string.ev_hidden_title, R.string.ev_hidden_detail, 15))
+            if (app.readsSms) add(ev(R.string.ev_sms_title, R.string.ev_sms_detail, 10))
+            if (app.requestsOverlay) add(ev(R.string.ev_overlay_title, R.string.ev_overlay_detail, 10))
+            if (app.installsPackages) add(ev(R.string.ev_install_title, R.string.ev_install_detail, 5))
         }
         val engineScore = scoreByPkg[app.pkg]
         val engineSignals = appEvents.filter { it.weight != 0 }.mapNotNull { SIGNALS_BY_ID[it.signalId] }.distinct()

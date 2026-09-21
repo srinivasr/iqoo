@@ -1,7 +1,227 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">DHRASHTAX</string>
+    <string name="app_name" translatable="false">DHRASHTAX</string>
+
+    <!-- Notification channels and notifications -->
     <string name="monitor_channel_name">Accessibility threat monitoring</string>
     <string name="containment_channel_name">Network containment</string>
     <string name="alert_channel_name">Threat alerts</string>
+    <string name="notif_monitor_title">DHRASHTAX is monitoring</string>
+    <string name="notif_monitor_text">Watching for newly enabled accessibility services</string>
+    <string name="notif_risk_title">%1$s: %2$s</string>
+    <string name="notif_dns_title">DHRASHTAX network watch is on</string>
+    <string name="notif_dns_text">Watching for apps that call home on a timer</string>
+    <string name="notif_contain_title">DHRASHTAX containment active</string>
+    <plurals name="notif_contain_text">
+        <item quantity="one">Internet is paused for %d risky app</item>
+        <item quantity="other">Internet is paused for %d risky apps</item>
+    </plurals>
+    <string name="explainer_fallback">%1$s turned on Accessibility access and is not a registered accessibility tool. It may be able to read your screen. Please review it and remove it if you do not trust it.</string>
+
+    <!-- Navigation and common -->
+    <string name="nav_home">Home</string>
+    <string name="nav_activity">Activity</string>
+    <string name="nav_settings">Settings</string>
+    <string name="cd_back">Back</string>
+    <string name="loading_app">Loading app…</string>
+    <string name="just_now">Just now</string>
+    <string name="version_label">Version %1$s</string>
+
+    <!-- Language picker -->
+    <string name="lang_title">Choose your language</string>
+    <string name="lang_subtitle">DHRASHTAX will use this language everywhere. You can change it later in Settings.</string>
+    <string name="lang_continue">Continue</string>
+
+    <!-- Home -->
+    <string name="home_title">App protection</string>
+    <string name="home_monitoring_active">Monitoring active</string>
+    <string name="home_monitoring_starting">Monitoring is starting</string>
+    <string name="home_status_private">Analysis stays on your phone.</string>
+    <string name="home_status_checking">Checking %1$s…</string>
+    <string name="metric_apps_checked">apps checked</string>
+    <string name="metric_to_review">to review</string>
+    <string name="metric_paused">paused</string>
+    <string name="home_needs_attention">Needs your attention</string>
+    <string name="home_loading_apps">Checking installed apps…</string>
+    <string name="home_all_clear">All clear</string>
+    <string name="home_all_clear_detail">No installed app needs a review right now.</string>
+    <string name="home_recent_activity">Recent activity</string>
+    <string name="home_see_all">See all</string>
+    <string name="home_no_activity">No activity yet. Reviews and blocked connections appear here.</string>
+    <string name="home_installed_apps">Installed apps</string>
+    <string name="home_installed_apps_count">Installed apps (%1$d)</string>
+    <string name="home_search_apps">Search apps</string>
+    <string name="home_show_system">Show system apps</string>
+    <string name="home_no_match">No apps match your search.</string>
+    <string name="score_short">Score %1$d</string>
+
+    <!-- App source -->
+    <string name="source_preinstalled">Pre-installed</string>
+    <string name="source_play_store">Play Store</string>
+    <string name="source_installed_by">Installed by %1$s</string>
+    <string name="source_outside_play">Installed outside Play Store</string>
+    <string name="source_unknown">an unknown source</string>
+
+    <!-- Risk levels -->
+    <string name="badge_paused">Paused</string>
+    <string name="badge_trusted">Trusted</string>
+    <string name="badge_critical">Critical risk</string>
+    <string name="badge_high">High risk</string>
+    <string name="badge_review">Review recommended</string>
+    <string name="badge_low">Low risk</string>
+    <string name="level_safe">No issues found</string>
+
+    <!-- Evidence -->
+    <string name="ev_threat_title">Matches a known threat</string>
+    <string name="ev_threat_detail">This app is on the local threat list.</string>
+    <string name="ev_canary_title">Sent decoy data off the device</string>
+    <string name="ev_canary_detail">A planted DHRX decoy value was seen leaving this phone.</string>
+    <string name="ev_beacon_title">Repeated server connections</string>
+    <string name="ev_beacon_detail">Looked up the same unknown server on a fixed schedule.</string>
+    <string name="ev_a11y_title">Accessibility access enabled</string>
+    <string name="ev_a11y_detail">Can read your screen and act on your behalf.</string>
+    <string name="ev_sideload_title">Installed outside Play Store</string>
+    <string name="ev_sideload_detail">Installed by %1$s. Source alone does not prove risk.</string>
+    <string name="ev_brand_title">Name resembles a bank or government app</string>
+    <string name="ev_brand_detail">Look-alike names are common in fake apps.</string>
+    <string name="ev_hidden_title">Hidden from app drawer</string>
+    <string name="ev_hidden_detail">Has no launcher icon, so it is easy to miss.</string>
+    <string name="ev_sms_title">Can read your SMS</string>
+    <string name="ev_sms_detail">Includes one-time passwords sent by banks.</string>
+    <string name="ev_overlay_title">Can draw over other apps</string>
+    <string name="ev_overlay_detail">Could show screens on top of banking apps.</string>
+    <string name="ev_install_title">Can install other apps</string>
+    <string name="ev_install_detail">May download and install more apps.</string>
+
+    <!-- App details -->
+    <string name="details_title">App details</string>
+    <string name="verdict_trusted">Trusted by you</string>
+    <string name="verdict_critical">Possible banking-malware behaviour</string>
+    <string name="verdict_high">Risky behaviour found</string>
+    <string name="verdict_review">Some activity needs your attention</string>
+    <string name="details_full_analysis">Full on-device analysis</string>
+    <string name="details_quick_check">Quick check</string>
+    <string name="details_score_line">%1$s · risk score %2$d of 100</string>
+    <string name="details_score_line_time">%1$s · risk score %2$d of 100 · %3$s</string>
+    <string name="explain_trusted">You marked %1$s as trusted, so DHRASHTAX does not flag it.</string>
+    <string name="explain_clean">%1$s shows no warning signs (%2$s) and has no sensitive access we watch for.</string>
+    <string name="explain_findings">%1$s: %2$s.</string>
+    <string name="explain_separator">; </string>
+    <string name="explain_review_advice">These signs do not confirm malware, but review its permissions and remove it if you do not trust it.</string>
+    <string name="explain_low_advice">On their own these are common and low risk.</string>
+    <string name="details_what_we_found">What we found</string>
+    <string name="details_no_warning_title">No warning signs</string>
+    <string name="details_no_warning_detail">Nothing in its install source, permissions or behaviour stood out.</string>
+    <string name="details_not_confirm">These signs do not confirm malware.</string>
+    <string name="details_listen">Listen to explanation</string>
+    <string name="details_technical">Technical details</string>
+    <string name="action_pause_internet">Pause internet</string>
+    <string name="action_paused_manage">Internet paused · Manage</string>
+    <string name="action_resume_internet">Resume internet</string>
+    <string name="action_review_permissions">Review permissions</string>
+    <string name="action_analyze_again">Analyze again</string>
+    <string name="action_trust">I trust this app</string>
+    <string name="action_untrust">Stop trusting this app</string>
+    <string name="action_uninstall">Uninstall app</string>
+    <string name="tech_package">Package</string>
+    <string name="tech_uid">App UID</string>
+    <string name="tech_installer">Installer</string>
+    <string name="tech_unknown">Unknown</string>
+    <string name="tech_installed">Installed</string>
+    <string name="tech_accessibility">Accessibility</string>
+    <string name="tech_a11y_off">Off</string>
+    <string name="tech_a11y_tool">On (declared tool)</string>
+    <string name="tech_a11y_on">On</string>
+    <string name="tech_score">Score</string>
+    <string name="tech_score_value">%1$d (%2$s; review ≥30, high ≥60, critical ≥90)</string>
+    <string name="tech_last_analysed">Last analysed</string>
+    <string name="tech_engine_signals">Engine signals</string>
+    <string name="tech_on_device">All analysis was performed on this device.</string>
+
+    <!-- Paused -->
+    <string name="paused_header">App controls</string>
+    <string name="paused_title">Internet access paused</string>
+    <string name="paused_message">%1$s connections through DHRASHTAX are blocked.</string>
+    <string name="paused_others">Other apps can still connect.</string>
+    <string name="paused_next">What to do next</string>
+    <string name="paused_step_review">Review this app’s permissions</string>
+    <string name="paused_step_remove">Remove it if you do not trust it</string>
+    <string name="paused_note">Pausing internet does not remove the app or its permissions.</string>
+    <string name="paused_no_attempts">No connection attempts yet</string>
+    <plurals name="paused_attempts_blocked">
+        <item quantity="one">%d connection attempt blocked</item>
+        <item quantity="other">%d connection attempts blocked</item>
+    </plurals>
+    <string name="paused_last_attempt">Last attempt %1$s</string>
+    <string name="paused_attempts_hint">Blocked attempts will appear here</string>
+
+    <!-- Activity -->
+    <string name="activity_subtitle">Everything DHRASHTAX noticed, newest first.</string>
+    <string name="filter_all">All</string>
+    <string name="filter_alerts">Alerts</string>
+    <string name="filter_network">Network</string>
+    <string name="filter_device">Device</string>
+    <string name="activity_empty_title">Nothing here yet</string>
+    <string name="activity_empty_detail">Reviews, blocked connections and device changes will appear here as they happen.</string>
+    <string name="act_reviewed">%1$s reviewed</string>
+    <string name="act_score_detail">Risk score %1$d · %2$s</string>
+    <string name="act_canary">%1$s sent decoy data off the device</string>
+    <string name="act_beacon">%1$s contacted a server on a fixed schedule</string>
+    <string name="act_a11y">Accessibility access turned on for %1$s</string>
+    <string name="act_sideload">%1$s installed outside Play Store</string>
+    <string name="act_bank">Banking app opened</string>
+    <string name="act_adb">USB or wireless debugging turned on</string>
+    <string name="act_work_profile">Work profile created</string>
+    <string name="act_cloned">An app was added to a second profile</string>
+    <string name="act_on_phone">On this phone</string>
+    <plurals name="act_blocked">
+        <item quantity="one">%d connection blocked</item>
+        <item quantity="other">%d connections blocked</item>
+    </plurals>
+    <string name="act_app_uid">App UID %1$d</string>
+    <string name="act_installed">%1$s installed</string>
+
+    <!-- Settings -->
+    <string name="settings_subtitle">Turn on each protection below. Everything runs on this phone.</string>
+    <string name="action_scan_now">Scan apps now</string>
+    <string name="settings_protection">Protection</string>
+    <string name="set_a11y_title">Accessibility monitoring</string>
+    <string name="set_a11y_detail">Checks every newly enabled accessibility service.</string>
+    <string name="set_starting">Starting</string>
+    <string name="set_dns_title">Network beacon detection</string>
+    <string name="set_dns_detail">Watches DNS lookups for apps that call home on a timer. Uses a local VPN.</string>
+    <string name="set_turn_on">Turn on</string>
+    <string name="set_bank_title">Banking app watch</string>
+    <string name="set_bank_detail">Notices when a banking app opens, to catch data grabbed at that moment. Needs Usage access.</string>
+    <string name="set_allow">Allow</string>
+    <string name="set_decoy_title">Decoy contact</string>
+    <string name="set_decoy_detail">Adds a fake “DHRASHTA Canary” contact that only a data thief would send out.</string>
+    <string name="set_alerts_title">Threat alerts</string>
+    <string name="set_alerts_detail">Notifications when a risky app is found.</string>
+    <string name="set_on">On</string>
+    <string name="set_open_a11y">Open accessibility settings</string>
+    <string name="set_trusted">Trusted apps</string>
+    <string name="set_trusted_empty">No trusted apps. Mark an app as trusted from its details screen.</string>
+    <string name="set_remove">Remove</string>
+    <string name="set_language">App language</string>
+    <string name="set_change">Change</string>
+    <string name="set_ai">On-device AI</string>
+    <string name="model_a11y">Accessibility behaviour model</string>
+    <string name="model_network">Network anomaly model</string>
+    <string name="model_llm">Explanation model (SmolLM2)</string>
+    <string name="model_installed">Installed</string>
+    <string name="model_missing">Not installed</string>
+    <string name="set_ai_note">Without a model file, that feature falls back to rules only.</string>
+    <string name="set_about">About</string>
+    <string name="about_version">DHRASHTAX %1$s</string>
+    <string name="about_text">On-device threat detection. No app data leaves this phone.</string>
+
+    <!-- Toasts -->
+    <string name="toast_vpn_needed">VPN permission is needed for network protection.</string>
+    <string name="toast_analyzing">Analyzing %1$s…</string>
+    <string name="toast_pause_failed">Could not pause %1$s. Grant VPN permission and try again.</string>
+    <string name="toast_resumed">Internet access resumed for %1$s</string>
+    <string name="toast_scanning">Scanning apps…</string>
+    <string name="toast_setting_unavailable">This setting is not available on this phone.</string>
+    <string name="toast_tts_unavailable">Text-to-speech for this language is not available on this phone.</string>
 </resources>

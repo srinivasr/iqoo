@@ -22,8 +22,12 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.dhrashta.x.R
 import com.dhrashta.x.ui.components.AppIdentity
 import com.dhrashta.x.ui.components.QuietCard
 import com.dhrashta.x.ui.components.ScreenPadding
@@ -49,16 +53,16 @@ fun InternetPausedScreen(
 ) {
     BackHandler(onBack = onBack)
     Column(Modifier.fillMaxSize().background(Canvas).verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding)) {
-        ScreenHeader("App controls", onBack)
+        ScreenHeader(stringResource(R.string.paused_header), onBack)
         Spacer(Modifier.height(12.dp))
         AppIdentity(risk.app)
         Spacer(Modifier.height(32.dp))
         Box(Modifier.size(48.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) {
             LineIcon(LineIconType.Check, Modifier.size(25.dp), Forest)
         }
-        Text("Internet access paused", style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 16.dp))
+        Text(stringResource(R.string.paused_title), style = MaterialTheme.typography.headlineMedium, modifier = Modifier.padding(top = 16.dp))
         Text(
-            "${risk.app.label} connections through DHRASHTAX are blocked.",
+            stringResource(R.string.paused_message, risk.app.label),
             color = MutedInk,
             style = MaterialTheme.typography.bodyLarge,
             modifier = Modifier.padding(top = 9.dp),
@@ -72,43 +76,48 @@ fun InternetPausedScreen(
             Box(Modifier.size(21.dp).background(Info, CircleShape), contentAlignment = Alignment.Center) {
                 Text("i", color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold)
             }
-            Text("Other apps can still connect.", color = Info, fontWeight = FontWeight.SemiBold)
+            Text(stringResource(R.string.paused_others), color = Info, fontWeight = FontWeight.SemiBold)
         }
         Spacer(Modifier.height(30.dp))
-        SectionTitle("What to do next")
+        SectionTitle(stringResource(R.string.paused_next))
         Spacer(Modifier.height(12.dp))
         QuietCard(Modifier.fillMaxWidth()) {
             Column(Modifier.padding(horizontal = 16.dp)) {
-                NextStep("1", "Review this app’s permissions")
+                NextStep("1", stringResource(R.string.paused_step_review))
                 HorizontalDivider(color = Line)
-                NextStep("2", "Remove it if you do not trust it")
+                NextStep("2", stringResource(R.string.paused_step_remove))
             }
         }
         Text(
-            "Pausing internet does not remove the app or its permissions.",
+            stringResource(R.string.paused_note),
             color = MutedInk,
             style = MaterialTheme.typography.bodyMedium,
             modifier = Modifier.padding(top = 12.dp),
         )
         Spacer(Modifier.height(24.dp))
-        SecondaryAction("Resume internet", onResumeInternet)
+        SecondaryAction(stringResource(R.string.action_resume_internet), onResumeInternet)
         Spacer(Modifier.height(10.dp))
-        SecondaryAction("Review permissions", onReviewPermissions)
+        SecondaryAction(stringResource(R.string.action_review_permissions), onReviewPermissions)
         Spacer(Modifier.height(10.dp))
-        SecondaryAction("Uninstall app", onUninstall)
+        SecondaryAction(stringResource(R.string.action_uninstall), onUninstall)
         Spacer(Modifier.height(30.dp))
-        SectionTitle("Activity")
+        SectionTitle(stringResource(R.string.nav_activity))
         Spacer(Modifier.height(12.dp))
         QuietCard(Modifier.fillMaxWidth()) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(9.dp).background(Forest, CircleShape))
                 Column(Modifier.padding(start = 12.dp)) {
                     Text(
-                        if (blockedCount == 0) "No connection attempts yet" else "$blockedCount connection attempts blocked",
+                        if (blockedCount == 0) {
+                            stringResource(R.string.paused_no_attempts)
+                        } else {
+                            pluralStringResource(R.plurals.paused_attempts_blocked, blockedCount, blockedCount)
+                        },
                         style = MaterialTheme.typography.titleMedium,
                     )
                     Text(
-                        lastBlocked?.let { "Last attempt ${relativeTime(it)}" } ?: "Blocked attempts will appear here",
+                        lastBlocked?.let { stringResource(R.string.paused_last_attempt, relativeTime(LocalContext.current.resources, it)) }
+                            ?: stringResource(R.string.paused_attempts_hint),
                         color = MutedInk,
                         style = MaterialTheme.typography.bodyMedium,
                     )
