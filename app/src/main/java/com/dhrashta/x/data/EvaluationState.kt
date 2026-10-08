@@ -12,6 +12,7 @@ data class EvaluationState(
     val explanation: String? = null,
     val firedSignals: List<String> = emptyList(),
     val contained: Boolean = false,
+    val trusted: Boolean = false,
     val message: String = "Monitoring is starting",
 )
 
@@ -20,6 +21,6 @@ object EvaluationStateStore {
     val state = mutableState.asStateFlow()
 
     fun update(block: (EvaluationState) -> EvaluationState) {
-        mutableState.value = block(mutableState.value)
+        synchronized(this) { mutableState.value = block(mutableState.value) }
     }
 }

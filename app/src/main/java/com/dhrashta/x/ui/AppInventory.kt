@@ -31,7 +31,7 @@ import com.dhrashta.x.R
 import com.dhrashta.x.data.Event
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.data.RiskScore
-import com.dhrashta.x.decision.RiskEngine
+import com.dhrashta.x.decision.BrandHeuristic
 import com.dhrashta.x.decision.Signal
 import com.dhrashta.x.decision.SignalCatalogue
 import com.dhrashta.x.decision.ThreatList
@@ -89,7 +89,6 @@ suspend fun loadInstalledApps(context: Context): List<InstalledApp> = withContex
     val pm = context.packageManager
     val threatList = runCatching { ThreatList.load(context) }.getOrElse { ThreatList.empty() }
     val a11y = runCatching { A11yInspector(context).scan() }.getOrDefault(emptyList()).associateBy { it.packageName }
-    val engine = RiskEngine()
     val launchable = pm.queryIntentActivities(
         android.content.Intent(android.content.Intent.ACTION_MAIN).addCategory(android.content.Intent.CATEGORY_LAUNCHER),
         0,
@@ -121,7 +120,9 @@ suspend fun loadInstalledApps(context: Context): List<InstalledApp> = withContex
             readsSms = info.granted(Manifest.permission.READ_SMS) || info.granted(Manifest.permission.RECEIVE_SMS),
             installsPackages = info.requests(Manifest.permission.REQUEST_INSTALL_PACKAGES),
             inThreatList = threatList.containsPackage(info.packageName),
-            mimicsBrand = runCatching { engine.nameMimicsProtectedBrand(label, info.packageName) }.getOrDefault(false),
+            mimicsBrand = runCatching {
+                BrandHeuristic.mimics(label, info.packageName, installer, appInfo.flags and ApplicationInfo.FLAG_SYSTEM != 0)
+            }.getOrDefault(false),
         )
     }.sortedBy { it.label.lowercase() }
 }
@@ -146,11 +147,12 @@ private val SIGNALS_BY_ID = listOf(
     SignalCatalogue.A1, SignalCatalogue.A2, SignalCatalogue.A3, SignalCatalogue.A4, SignalCatalogue.A5,
     SignalCatalogue.A6, SignalCatalogue.B1, SignalCatalogue.B4, SignalCatalogue.B5, SignalCatalogue.B6,
     SignalCatalogue.C1, SignalCatalogue.C5, SignalCatalogue.D1, SignalCatalogue.D2, SignalCatalogue.E4,
-    SignalCatalogue.E5, SignalCatalogue.HIGH_TAINT_MATCH, SignalCatalogue.N1, SignalCatalogue.N2, SignalCatalogue.N3,
+    SignalCatalogue.E5, SignalCatalogue.HIGH_TAINT_MATCH, SignalCatalogue.N1, SignalCatalogue.N3,
 ).associateBy { it.id }
 
 /**
- * Joins installed apps with engine scores and sensor events. Apps the engine has evaluated use its
+ * Joins installed apps with engine scores and sensor events. [pausedUids] must be the UIDs that are
+ * actually contained (GuardVpnService.containedUids), never merely requested. Apps the engine has evaluated use its
  * score; the rest get a quick check from install source, permissions and observed behaviour, scored
  * with the same weights and 30/60/90 bands as RiskEngine.
  */
@@ -170,7 +172,7 @@ fun assessApps(
         fun ev(title: Int, detail: Int, weight: Int) = evs(title, res.getString(detail), weight)
         val evidence = buildList {
             if (app.inThreatList) add(ev(R.string.ev_threat_title, R.string.ev_threat_detail, 50))
-            if (appEvents.any { it.signalId == EventLogger.CANARY_READ }) add(ev(R.string.ev_canary_title, R.string.ev_canary_detail, 50))
+            if (appEvents.any { it.signalId == EventLogger.CANARY_SEND_ATTEMPT }) add(ev(R.string.ev_canary_title, R.string.ev_canary_detail, 50))
             if (appEvents.any { it.signalId == EventLogger.BEACON_UNKNOWN_HOST }) add(ev(R.string.ev_beacon_title, R.string.ev_beacon_detail, 15))
             if (app.a11yEnabled && !app.a11yIsTool) add(ev(R.string.ev_a11y_title, R.string.ev_a11y_detail, 15))
             if (app.sideloaded) {
@@ -187,11 +189,9 @@ fun assessApps(
         val engineSignals = appEvents.filter { it.weight != 0 }.mapNotNull { SIGNALS_BY_ID[it.signalId] }.distinct()
         val isTrusted = app.pkg in trusted
         val quickScore = (evidence.sumOf { it.weight } + if (app.isSystem) SignalCatalogue.N3.weight else 0).coerceAtLeast(0)
-        val score = when {
-            isTrusted -> 0
-            engineScore != null -> engineScore.score
-            else -> quickScore
-        }
+        // Trust never rewrites the score (see TrustPolicy): the screen shows the same number the
+        // engine computed, and "trusted" only mutes automatic actions and alerts.
+        val score = engineScore?.score ?: quickScore
         AppRisk(
             app = app,
             score = score,

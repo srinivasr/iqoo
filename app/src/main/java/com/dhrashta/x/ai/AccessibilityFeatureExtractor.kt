@@ -1,6 +1,7 @@
 package com.dhrashta.x.ai
 
 import android.Manifest
+import com.dhrashta.x.decision.BrandHeuristic
 import com.dhrashta.x.decision.ThreatList
 import com.dhrashta.x.sensing.A11yFinding
 import com.dhrashta.x.sensing.Identity
@@ -11,10 +12,15 @@ class AccessibilityFeatureExtractor(private val threatList: ThreatList) {
         identity: Identity,
         finding: A11yFinding,
         @Suppress("UNUSED_PARAMETER") posture: Posture,
-        enabledAtMillis: Long = System.currentTimeMillis(),
+        enabledAtMillis: Long?,
     ): FloatArray {
-        val secondsToEnable = ((enabledAtMillis - identity.firstInstallTime).coerceAtLeast(0L) / 1_000f)
-        val installToEnableRisk = (1f - secondsToEnable / 600f).coerceIn(0f, 1f)
+        // Timed from when the service was FIRST seen enabled, not from when this scan ran. Unknown -> 0.
+        val installToEnableRisk = if (enabledAtMillis == null) {
+            0f
+        } else {
+            val secondsToEnable = (enabledAtMillis - identity.firstInstallTime).coerceAtLeast(0L) / 1_000f
+            (1f - secondsToEnable / 600f).coerceIn(0f, 1f)
+        }
         return floatArrayOf(
             finding.isAccessibilityTool.binary(),
             finding.canRetrieveWindowContent.binary(),
@@ -26,14 +32,9 @@ class AccessibilityFeatureExtractor(private val threatList: ThreatList) {
             (identity.installer != PLAY_STORE).binary(),
             identity.hasLauncher.binary(),
             installToEnableRisk,
-            nameMimicsBankOrGovernment(identity.appLabel, identity.pkg).binary(),
+            BrandHeuristic.mimics(identity.appLabel, identity.pkg, identity.installer, identity.isSystemApp).binary(),
             threatList.contains(identity.certSha256).binary(),
         ).also { require(it.size == FEATURE_COUNT) }
-    }
-
-    private fun nameMimicsBankOrGovernment(label: String, pkg: String): Boolean {
-        val candidate = "$label $pkg".lowercase().replace(Regex("[^a-z0-9]"), "")
-        return PROTECTED_NAMES.any { candidate.contains(it) }
     }
 
     private fun Boolean.binary(): Float = if (this) 1f else 0f
@@ -41,6 +42,5 @@ class AccessibilityFeatureExtractor(private val threatList: ThreatList) {
     private companion object {
         const val FEATURE_COUNT = 12
         const val PLAY_STORE = "com.android.vending"
-        val PROTECTED_NAMES = listOf("sbi", "hdfc", "icici", "axisbank", "paytm", "uidai", "aadhaar", "incometax")
     }
 }

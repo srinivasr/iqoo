@@ -12,21 +12,27 @@ import androidx.core.app.NotificationCompat
 import com.dhrashta.x.R
 import com.dhrashta.x.ai.AccessibilityFeatureExtractor
 import com.dhrashta.x.ai.AccessibilityMlpClassifier
-import com.dhrashta.x.ai.LlmExplainer
-import com.dhrashta.x.ai.NetworkAnomalyModel
+import com.dhrashta.x.ai.NetworkThreatClassifier
+import com.dhrashta.x.data.AllowList
 import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
+import com.dhrashta.x.data.ModelStatusStore
 import com.dhrashta.x.decision.CausalChains
+import com.dhrashta.x.decision.Explanations
 import com.dhrashta.x.decision.RiskEngine
 import com.dhrashta.x.decision.ThreatList
+import com.dhrashta.x.decision.TrustPolicy
 import com.dhrashta.x.enforcement.NetworkPause
 import com.dhrashta.x.ui.MainActivity
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class DhrashtaForegroundService : Service() {
@@ -42,9 +48,11 @@ class DhrashtaForegroundService : Service() {
     private lateinit var threatList: ThreatList
     private lateinit var featureExtractor: AccessibilityFeatureExtractor
     private lateinit var accessibilityModel: AccessibilityMlpClassifier
-    private lateinit var networkModel: NetworkAnomalyModel
-    private lateinit var explainer: LlmExplainer
+    @Volatile private var networkModel: NetworkThreatClassifier? = null
     private val riskEngine = RiskEngine()
+
+    /** One evaluation per package at a time, so overlapping triggers cannot race each other. */
+    private val evaluationLocks = ConcurrentHashMap<String, Mutex>()
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(AppLanguage.wrap(newBase))
@@ -63,9 +71,9 @@ class DhrashtaForegroundService : Service() {
         inspector = A11yInspector(this)
         postureChecker = PostureChecker(this)
         featureExtractor = AccessibilityFeatureExtractor(threatList)
-        accessibilityModel = AccessibilityMlpClassifier(this)
-        networkModel = NetworkAnomalyModel(this)
-        explainer = LlmExplainer(this)
+        accessibilityModel = AccessibilityMlpClassifier.load(this)
+        ModelStatusStore.update { it.copy(a11yModelLoaded = accessibilityModel.isAvailable, a11yBackend = accessibilityModel.backendDetail) }
+        serviceScope.launch { loadNetworkModel() }
         observer = A11yObserver(this) { packages ->
             val enabledAt = System.currentTimeMillis()
             packages.forEach { pkg ->
@@ -100,7 +108,7 @@ class DhrashtaForegroundService : Service() {
                 message = if (accessibilityModel.isAvailable) {
                     "Monitoring accessibility services with local ML and rules"
                 } else {
-                    "Monitoring accessibility services with rules; model asset is not installed"
+                    "Monitoring accessibility services with rules (accessibility model not installed)"
                 },
             )
         }
@@ -109,6 +117,7 @@ class DhrashtaForegroundService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_SCAN) scanAllEnabledServices()
         if (intent?.action == ACTION_EVALUATE) intent.getStringExtra(EXTRA_PACKAGE)?.let(::evaluateIfAccessibilityEnabled)
+        if (intent?.action == ACTION_SELF_TEST) serviceScope.launch { runNetworkSelfTest() }
         return START_STICKY
     }
 
@@ -121,8 +130,7 @@ class DhrashtaForegroundService : Service() {
         usageWatcher.stop()
         profileAppWatcher.stop()
         accessibilityModel.close()
-        networkModel.close()
-        explainer.close()
+        networkModel?.close()
         serviceScope.cancel()
         EvaluationStateStore.update { it.copy(monitoring = false, evaluating = false, message = "Monitoring stopped") }
         super.onDestroy()
@@ -154,45 +162,83 @@ class DhrashtaForegroundService : Service() {
         serviceScope.launch { evaluate(pkg) }
     }
 
+    private suspend fun loadNetworkModel() {
+        val model = NetworkThreatClassifier.load(this)
+        networkModel = model
+        ModelStatusStore.update {
+            it.copy(
+                networkLoaded = model != null,
+                networkModelFile = model?.modelFile,
+                networkBackend = model?.backendDetail,
+                networkLiveInput = false,
+            )
+        }
+        if (model != null) runNetworkSelfTest()
+    }
+
+    /** Replays the golden windows bundled with the model and publishes the honest result. */
+    private fun runNetworkSelfTest() {
+        val model = networkModel ?: return
+        val report = runCatching { model.selfTest(this) }
+            .onFailure { Log.e(TAG, "Network self-test failed to run", it) }
+            .getOrNull()
+        ModelStatusStore.update {
+            it.copy(
+                networkSelfTestPassed = report?.passed ?: false,
+                networkSelfTestSummary = report?.let { r ->
+                    getString(
+                        R.string.selftest_result,
+                        r.matchingTopClass,
+                        r.cases,
+                        "%.3f".format(r.maxDifference),
+                        r.backend,
+                        r.meanLatencyMicros,
+                    )
+                } ?: getString(R.string.selftest_error),
+            )
+        }
+        report?.let { Log.i(TAG, "Network self-test: $it") }
+    }
+
     private suspend fun evaluate(pkg: String) {
+        evaluationLocks.getOrPut(pkg) { Mutex() }.withLock { evaluateLocked(pkg) }
+    }
+
+    private suspend fun evaluateLocked(pkg: String) {
         EvaluationStateStore.update { it.copy(evaluating = true, packageName = pkg, message = "Evaluating $pkg") }
         runCatching {
             val identity = identityResolver.resolve(pkg)
             val finding = inspector.scan().firstOrNull { it.packageName == pkg }
                 ?: error("Accessibility service configuration is no longer enabled")
             val posture = postureChecker.check()
-            val features = featureExtractor.extract(identity, finding, posture)
+            // The moment the service was FIRST seen enabled, not the moment of this (re)scan.
+            val enabledAt = EventLogger.firstEventTime(pkg, EventLogger.A11Y_ENABLED)
+            val features = featureExtractor.extract(identity, finding, posture, enabledAt)
             val mlpResult = accessibilityModel.classify(features)
-            // Network windows are supplied by the future 60-second network feature collector.
-            // A null score is explicit and does not create a synthetic anomaly signal.
-            val networkScore: Float? = null
-            val allowList = getSharedPreferences(ALLOW_LIST_PREFS, MODE_PRIVATE)
-                .getStringSet(ALLOW_LIST_KEY, emptySet()).orEmpty()
+            // The network model needs complete traffic windows for this app. This build only captures
+            // DNS lookups and paused apps, so there is no window to score: null, never a guessed value.
+            val networkThreat: Float? = null
+            val trusted = pkg in AllowList.get(this)
             val now = System.currentTimeMillis()
             val recentEvents = EventLogger.recentEvents(pkg, since = now - CausalChains.LOOKBACK_MILLIS)
-            val matchedChains = CausalChains.matchedChains(recentEvents, now)
-            val causalBonus = CausalChains.match(recentEvents, now)
+            val matchedChains = CausalChains.matchedChains(recentEvents, now, pkg)
             val result = riskEngine.evaluate(
                 identity = identity,
                 a11y = finding,
                 posture = posture,
                 mlpResult = mlpResult,
-                networkScore = networkScore,
-                allowList = allowList,
+                networkThreatProbability = networkThreat,
+                trusted = trusted,
                 threatList = threatList,
-                causalBonus = causalBonus,
+                causalBonus = CausalChains.bonus(matchedChains),
                 recentEvents = recentEvents,
+                a11yEnabledAt = enabledAt,
             )
             EventLogger.recordRisk(pkg, result.score, result.band.name)
             EventLogger.recordSignals(pkg, result)
-            val contained = result.band == RiskEngine.Band.CRITICAL && NetworkPause.pause(this, identity.uid)
-            val language = getSharedPreferences(UI_PREFS, MODE_PRIVATE).getString(LANGUAGE_KEY, "English") ?: "English"
-            val explanation = explainer.explain(
-                appName = identity.appLabel,
-                score = result.score,
-                signals = result.firedSignals.map { it.id },
-                language = language,
-            )
+            val contained = result.action == TrustPolicy.Action.CONTAIN &&
+                NetworkPause.pauseAndConfirm(this, identity.uid)
+            val explanation = Explanations.build(this, identity.appLabel, result, matchedChains)
             EvaluationStateStore.update {
                 it.copy(
                     monitoring = true,
@@ -204,18 +250,20 @@ class DhrashtaForegroundService : Service() {
                     firedSignals = result.firedSignals.map { signal -> "${signal.id}: ${signal.description}" } +
                         matchedChains.map { chain -> "${chain.id}: ${chain.steps.joinToString(" → ")} (+${chain.bonus})" },
                     contained = contained,
+                    trusted = trusted,
                     message = when {
                         contained -> "Critical risk contained; network access paused"
-                        result.band == RiskEngine.Band.CRITICAL -> "Critical risk found; VPN permission is required to contain it"
+                        result.action == TrustPolicy.Action.CONTAIN -> "Critical risk found; containment could not be confirmed (VPN permission or package mapping)"
+                        trusted -> "Evaluation complete (trusted app: no automatic action)"
                         else -> "Evaluation complete"
                     },
                 )
             }
-            showRiskNotification(identity.appLabel, pkg, result, explanation)
+            if (result.action != TrustPolicy.Action.NONE) showRiskNotification(identity.appLabel, pkg, result, explanation)
             Log.i(
                 TAG,
-                "Evaluated $pkg score=${result.score} band=${result.band} signals=${result.firedSignals.map { it.id }} " +
-                    "chains=${matchedChains.map { it.id }} causalBonus=$causalBonus",
+                "Evaluated $pkg score=${result.score} band=${result.band} action=${result.action} " +
+                    "signals=${result.firedSignals.map { it.id }} chains=${matchedChains.map { it.id }}",
             )
         }.onFailure { error ->
             Log.e(TAG, "Evaluation failed for $pkg", error)
@@ -285,15 +333,12 @@ class DhrashtaForegroundService : Service() {
     companion object {
         const val ACTION_SCAN = "com.dhrashta.x.action.SCAN"
         const val ACTION_EVALUATE = "com.dhrashta.x.action.EVALUATE"
+        const val ACTION_SELF_TEST = "com.dhrashta.x.action.SELF_TEST"
         const val EXTRA_PACKAGE = "package"
         private const val TAG = "DhrashtaMonitor"
         private const val MONITOR_CHANNEL = "accessibility_monitor"
         private const val ALERT_CHANNEL = "threat_alerts"
         private const val MONITOR_NOTIFICATION_ID = 1001
-        private const val ALLOW_LIST_PREFS = "allow_list"
-        private const val ALLOW_LIST_KEY = "packages"
-        private const val UI_PREFS = "ui_preferences"
-        private const val LANGUAGE_KEY = "language"
         private const val PLAY_STORE = "com.android.vending"
 
         /** Asks the running monitor to re-evaluate [pkg] (skipped if it has no enabled accessibility service). */

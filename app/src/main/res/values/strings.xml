@@ -16,7 +16,6 @@
         <item quantity="one">Internet is paused for %d risky app</item>
         <item quantity="other">Internet is paused for %d risky apps</item>
     </plurals>
-    <string name="explainer_fallback">%1$s turned on Accessibility access and is not a registered accessibility tool. It may be able to read your screen. Please review it and remove it if you do not trust it.</string>
 
     <!-- Navigation and common -->
     <string name="nav_home">Home</string>
@@ -74,8 +73,6 @@
     <!-- Evidence -->
     <string name="ev_threat_title">Matches a known threat</string>
     <string name="ev_threat_detail">This app is on the local threat list.</string>
-    <string name="ev_canary_title">Sent decoy data off the device</string>
-    <string name="ev_canary_detail">A planted DHRX decoy value was seen leaving this phone.</string>
     <string name="ev_beacon_title">Repeated server connections</string>
     <string name="ev_beacon_detail">Looked up the same unknown server on a fixed schedule.</string>
     <string name="ev_a11y_title">Accessibility access enabled</string>
@@ -103,7 +100,6 @@
     <string name="details_quick_check">Quick check</string>
     <string name="details_score_line">%1$s · risk score %2$d of 100</string>
     <string name="details_score_line_time">%1$s · risk score %2$d of 100 · %3$s</string>
-    <string name="explain_trusted">You marked %1$s as trusted, so DHRASHTAX does not flag it.</string>
     <string name="explain_clean">%1$s shows no warning signs (%2$s) and has no sensitive access we watch for.</string>
     <string name="explain_findings">%1$s: %2$s.</string>
     <string name="explain_separator">; </string>
@@ -165,7 +161,6 @@
     <string name="activity_empty_detail">Reviews, blocked connections and device changes will appear here as they happen.</string>
     <string name="act_reviewed">%1$s reviewed</string>
     <string name="act_score_detail">Risk score %1$d · %2$s</string>
-    <string name="act_canary">%1$s sent decoy data off the device</string>
     <string name="act_beacon">%1$s contacted a server on a fixed schedule</string>
     <string name="act_a11y">Accessibility access turned on for %1$s</string>
     <string name="act_sideload">%1$s installed outside Play Store</string>
@@ -194,8 +189,6 @@
     <string name="set_bank_title">Banking app watch</string>
     <string name="set_bank_detail">Notices when a banking app opens, to catch data grabbed at that moment. Needs Usage access.</string>
     <string name="set_allow">Allow</string>
-    <string name="set_decoy_title">Decoy contact</string>
-    <string name="set_decoy_detail">Adds a fake “DHRASHTA Canary” contact that only a data thief would send out.</string>
     <string name="set_alerts_title">Threat alerts</string>
     <string name="set_alerts_detail">Notifications when a risky app is found.</string>
     <string name="set_on">On</string>
@@ -205,13 +198,6 @@
     <string name="set_remove">Remove</string>
     <string name="set_language">App language</string>
     <string name="set_change">Change</string>
-    <string name="set_ai">On-device AI</string>
-    <string name="model_a11y">Accessibility behaviour model</string>
-    <string name="model_network">Network anomaly model</string>
-    <string name="model_llm">Explanation model (SmolLM2)</string>
-    <string name="model_installed">Installed</string>
-    <string name="model_missing">Not installed</string>
-    <string name="set_ai_note">Without a model file, that feature falls back to rules only.</string>
     <string name="set_about">About</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">On-device threat detection. No app data leaves this phone.</string>
@@ -224,4 +210,66 @@
     <string name="toast_scanning">Scanning apps…</string>
     <string name="toast_setting_unavailable">This setting is not available on this phone.</string>
     <string name="toast_tts_unavailable">Text-to-speech for this language is not available on this phone.</string>
+    <string name="expl_intro">What DHRASHTA-X observed for %1$s:</string>
+    <string name="expl_nothing">DHRASHTA-X did not observe any warning sign for %1$s.</string>
+    <string name="expl_chain">Sequence %1$s matched: %2$s.</string>
+    <string name="expl_advice_critical">This is a strong pattern. Review it now, and uninstall it if you do not recognise it.</string>
+    <string name="expl_advice_review">These signs do not confirm malware. Review its permissions and remove it if you do not trust it.</string>
+    <string name="expl_advice_low">Nothing here needs action right now.</string>
+    <string name="expl_trusted_suffix">You marked this app as trusted, so it is not paused or alerted automatically.</string>
+    <string name="expl_sig_a1">its accessibility service is not a registered accessibility tool</string>
+    <string name="expl_sig_a2">it can read the content of other apps\' windows</string>
+    <string name="expl_sig_a3">it can perform taps and gestures</string>
+    <string name="expl_sig_a4">it can receive key events</string>
+    <string name="expl_sig_a5">its accessibility service watches every app</string>
+    <string name="expl_sig_a6">accessibility was turned on within 10 minutes of installing it</string>
+    <string name="expl_sig_b1">it was not installed from Google Play</string>
+    <string name="expl_sig_b4">its signing certificate is on the local threat list</string>
+    <string name="expl_sig_b5">it has no launcher icon</string>
+    <string name="expl_sig_b6">its name looks like a bank or government app</string>
+    <string name="expl_sig_c1">it can draw over other apps</string>
+    <string name="expl_sig_c5">it can list all installed apps</string>
+    <string name="expl_sig_d1">wireless debugging is switched on</string>
+    <string name="expl_sig_d2">a new work profile appeared</string>
+    <string name="expl_sig_e4">the network model classified its traffic as a threat class</string>
+    <string name="expl_sig_e5">the accessibility model classified its behaviour as non-benign</string>
+    <string name="expl_sig_taint">it tried to send a planted decoy value (the packet was blocked)</string>
+    <string name="selftest_result">%1$d/%2$d golden windows match · max diff %3$s · %4$s · %5$d µs avg</string>
+    <string name="selftest_error">Self-test could not run</string>
+    <string name="selftest_pending">self-test pending</string>
+    <string name="cov_title">What is monitored</string>
+    <string name="cov_off">Off</string>
+    <string name="cov_not_monitored">Not monitored</string>
+    <string name="cov_note">This list is read from the live state of the app. Anything marked Not monitored is outside what this build can see.</string>
+    <string name="cov_a11y">Accessibility services</string>
+    <string name="cov_a11y_detail">Enabled services are checked when they change and on every scan.</string>
+    <string name="cov_dns">DNS lookups</string>
+    <string name="cov_dns_detail">Domain lookups pass through a local relay for beacon detection. Needs VPN permission.</string>
+    <string name="cov_traffic">Full network traffic</string>
+    <string name="cov_traffic_detail">Not captured. Only DNS lookups and apps you pause pass through DHRASHTA-X.</string>
+    <string name="cov_bank">Banking app in foreground</string>
+    <string name="cov_bank_detail">Needs Usage Access. Used to time sequences such as CC-3.</string>
+    <string name="cov_decoys">Decoy data</string>
+    <string name="cov_decoys_detail">Opt-in. Catches a decoy only in DNS lookups or in a paused app\'s unencrypted traffic.</string>
+    <string name="cov_netmodel">Network threat model</string>
+    <string name="cov_netmodel_detail">%1$s · %2$s</string>
+    <string name="cov_model_missing">Model file not installed</string>
+    <string name="cov_netmodel_live">Live traffic into the network model</string>
+    <string name="cov_netmodel_live_detail">Needs full-flow capture, which this build does not have. The model is verified with the self-test instead.</string>
+    <string name="cov_a11ymodel">Accessibility model</string>
+    <string name="cov_a11ymodel_missing">Not installed; accessibility checks use rules only</string>
+    <string name="cov_threats">Local threat list</string>
+    <string name="cov_threats_detail">%1$d entries · source: %2$s</string>
+    <string name="cov_threats_none">Empty: no vetted feed is bundled</string>
+    <string name="set_selftest">Run model self-test</string>
+    <string name="set_turn_off">Turn off</string>
+    <string name="toast_pausing">Pausing %1$s…</string>
+    <string name="toast_decoys_off">Decoys removed</string>
+    <string name="toast_selftest">Running model self-test…</string>
+    <string name="ev_canary_title">Tried to send decoy data</string>
+    <string name="ev_canary_detail">A planted DHRX decoy appeared in its outbound traffic. The packet was blocked, so nothing left the phone.</string>
+    <string name="act_canary">%1$s tried to send decoy data (blocked)</string>
+    <string name="explain_trusted">You marked %1$s as trusted, so DHRASHTA-X does not pause it or alert about it. Its evidence score is still shown.</string>
+    <string name="set_decoy_title">Decoy data (optional)</string>
+    <string name="set_decoy_detail">Plants a fake contact and fake values that no honest app should send. Off by default; turning it off removes them.</string>
 </resources>

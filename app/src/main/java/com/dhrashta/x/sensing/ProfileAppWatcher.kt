@@ -12,7 +12,7 @@ import com.dhrashta.x.data.EventLogger
 import java.util.concurrent.ConcurrentHashMap
 
 /**
- * Second half of CC-5: logs [EventLogger.CLONED_APP_LAUNCHED] (device-wide) the first time a package
+ * Second half of CC-5: logs [EventLogger.CLONED_APP_LAUNCHED] (under that package, so CC-5 is attributed to it) the first time a package
  * appears inside another profile (work profile / app clone) of this device.
  *
  * Proxy, not true launch detection: public APIs do not expose another profile's usage events, so this
@@ -48,7 +48,7 @@ class ProfileAppWatcher(context: Context) {
     private fun onPackageInProfile(pkg: String, user: UserHandle) {
         if (user == Process.myUserHandle() || user !in userManager.userProfiles) return
         if (!seen.add("$user/$pkg")) return
-        EventLogger.recordEvent(EventLogger.DEVICE_PKG, EventLogger.CLONED_APP_LAUNCHED)
+        EventLogger.recordEvent(pkg, EventLogger.CLONED_APP_LAUNCHED)
         Log.i(TAG, "Package $pkg appeared in profile $user")
     }
 

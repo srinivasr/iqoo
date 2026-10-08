@@ -13,7 +13,6 @@
         <item quantity="one">%dଟି ବିପଜ୍ଜନକ ଆପ୍‌ର ଇଣ୍ଟରନେଟ୍ ବନ୍ଦ</item>
         <item quantity="other">%dଟି ବିପଜ୍ଜନକ ଆପ୍‌ର ଇଣ୍ଟରନେଟ୍ ବନ୍ଦ</item>
     </plurals>
-    <string name="explainer_fallback">%1$s ଆକ୍ସେସିବିଲିଟି ଅନୁମତି ଚାଲୁ କରିଛି ଏବଂ ଏହା ପଞ୍ଜିକୃତ ଆକ୍ସେସିବିଲିଟି ଟୁଲ୍ ନୁହେଁ। ଏହା ଆପଣଙ୍କ ସ୍କ୍ରିନ୍ ପଢ଼ିପାରେ। ଦୟାକରି ଏହାକୁ ଯାଞ୍ଚ କରନ୍ତୁ ଏବଂ ଭରସା ନଥିଲେ ହଟାଇ ଦିଅନ୍ତୁ।</string>
 
     <string name="nav_home">ହୋମ୍</string>
     <string name="nav_activity">କାର୍ଯ୍ୟକଳାପ</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">ଜଣାଶୁଣା ବିପଦ ସହ ମେଳ ଖାଏ</string>
     <string name="ev_threat_detail">ଏହି ଆପ୍ ସ୍ଥାନୀୟ ବିପଦ ତାଲିକାରେ ଅଛି।</string>
-    <string name="ev_canary_title">ନକଲି ଡାଟା ଫୋନ ବାହାରକୁ ପଠାଇଲା</string>
-    <string name="ev_canary_detail">ରଖାଯାଇଥିବା DHRX ନକଲି ମୂଲ୍ୟ ଏହି ଫୋନରୁ ବାହାରକୁ ଯିବା ଦେଖାଗଲା।</string>
     <string name="ev_beacon_title">ବାରମ୍ବାର ସର୍ଭର ସଂଯୋଗ</string>
     <string name="ev_beacon_detail">ସେହି ଅଜଣା ସର୍ଭରକୁ ନିର୍ଦ୍ଦିଷ୍ଟ ସମୟରେ ଖୋଜିଲା।</string>
     <string name="ev_a11y_title">ଆକ୍ସେସିବିଲିଟି ଅନୁମତି ଚାଲୁ</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">ଶୀଘ୍ର ଯାଞ୍ଚ</string>
     <string name="details_score_line">%1$s · ବିପଦ ସ୍କୋର 100 ମଧ୍ୟରୁ %2$d</string>
     <string name="details_score_line_time">%1$s · ବିପଦ ସ୍କୋର 100 ମଧ୍ୟରୁ %2$d · %3$s</string>
-    <string name="explain_trusted">ଆପଣ %1$s କୁ ବିଶ୍ୱସ୍ତ ଭାବେ ଚିହ୍ନିତ କରିଛନ୍ତି, ତେଣୁ DHRASHTAX ଏହା ବିଷୟରେ ସତର୍କ କରେ ନାହିଁ।</string>
     <string name="explain_clean">%1$s ରେ କୌଣସି ସତର୍କ ସଙ୍କେତ ନାହିଁ (%2$s) ଏବଂ କୌଣସି ସମ୍ବେଦନଶୀଳ ଅନୁମତି ନାହିଁ।</string>
     <string name="explain_findings">%1$s: %2$s।</string>
     <string name="explain_separator">; </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">ସମୀକ୍ଷା, ଅଟକାଯାଇଥିବା ସଂଯୋଗ ଓ ଡିଭାଇସ୍ ପରିବର୍ତ୍ତନ ଘଟିବା ମାତ୍ରେ ଏଠାରେ ଦେଖାଯିବ।</string>
     <string name="act_reviewed">%1$s ର ସମୀକ୍ଷା ହେଲା</string>
     <string name="act_score_detail">ବିପଦ ସ୍କୋର %1$d · %2$s</string>
-    <string name="act_canary">%1$s ନକଲି ଡାଟା ଫୋନ ବାହାରକୁ ପଠାଇଲା</string>
     <string name="act_beacon">%1$s ନିର୍ଦ୍ଦିଷ୍ଟ ସମୟରେ ସର୍ଭର ସହ ଯୋଗାଯୋଗ କଲା</string>
     <string name="act_a11y">%1$s ପାଇଁ ଆକ୍ସେସିବିଲିଟି ଅନୁମତି ଚାଲୁ ହେଲା</string>
     <string name="act_sideload">%1$s Play Store ବାହାରୁ ଇନଷ୍ଟଲ୍ ହେଲା</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">ବ୍ୟାଙ୍କିଂ ଆପ୍ ନିରୀକ୍ଷଣ</string>
     <string name="set_bank_detail">ବ୍ୟାଙ୍କିଂ ଆପ୍ ଖୋଲିଲେ ଜାଣେ, ଯାହାଦ୍ୱାରା ସେହି ସମୟରେ ଚୋରି ହେଉଥିବା ଡାଟା ଧରାଯାଇପାରିବ। Usage access ଦରକାର।</string>
     <string name="set_allow">ଅନୁମତି ଦିଅନ୍ତୁ</string>
-    <string name="set_decoy_title">ନକଲି ସମ୍ପର୍କ</string>
-    <string name="set_decoy_detail">କେବଳ ଡାଟା ଚୋର ହିଁ ବାହାରକୁ ପଠାଉଥିବା ଏକ ନକଲି “DHRASHTA Canary” ସମ୍ପର୍କ ଯୋଡ଼େ।</string>
     <string name="set_alerts_title">ବିପଦ ସତର୍କତା</string>
     <string name="set_alerts_detail">ବିପଜ୍ଜନକ ଆପ୍ ମିଳିଲେ ବିଜ୍ଞପ୍ତି।</string>
     <string name="set_on">ଚାଲୁ</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">ହଟାନ୍ତୁ</string>
     <string name="set_language">ଆପ୍ ଭାଷା</string>
     <string name="set_change">ବଦଳାନ୍ତୁ</string>
-    <string name="set_ai">ଡିଭାଇସ୍‌ରେ AI</string>
-    <string name="model_a11y">ଆକ୍ସେସିବିଲିଟି ଆଚରଣ ମଡେଲ୍</string>
-    <string name="model_network">ନେଟୱର୍କ ଅସ୍ୱାଭାବିକତା ମଡେଲ୍</string>
-    <string name="model_llm">ବ୍ୟାଖ୍ୟା ମଡେଲ୍ (SmolLM2)</string>
-    <string name="model_installed">ଇନଷ୍ଟଲ୍ ଅଛି</string>
-    <string name="model_missing">ଇନଷ୍ଟଲ୍ ନାହିଁ</string>
-    <string name="set_ai_note">ମଡେଲ୍ ଫାଇଲ୍ ନଥିଲେ ସେହି ସୁବିଧା କେବଳ ନିୟମ ଉପରେ ଚାଲେ।</string>
     <string name="set_about">ବିଷୟରେ</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">ଡିଭାଇସ୍‌ରେ ହିଁ ବିପଦ ଚିହ୍ନଟ। କୌଣସି ଆପ୍ ଡାଟା ଏହି ଫୋନ ବାହାରକୁ ଯାଏ ନାହିଁ।</string>

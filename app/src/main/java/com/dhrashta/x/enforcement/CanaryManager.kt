@@ -22,9 +22,13 @@ enum class CanaryType { CONTACT, UUID, CREDENTIAL, DEVICE_MARKER }
  * which packages were caught sending them. Every value starts with "DHRX-" so it is easy to spot in
  * packet captures and to clean up (decoy prefs file, and one contact whose raw ID is stored in it).
  *
- * Canary-based, not true runtime taint tracking. Only catches unencrypted exfiltration. Encrypted
- * payloads will not match. GuardVpnService only sees DNS queries and paused apps' traffic, so a canary
- * is caught when it leaves through a DNS lookup or from an app that is already contained.
+ * OPT-IN ONLY: nothing is planted unless the user turns decoys on in Settings ([setEnabled]). Turning
+ * them off removes the decoy contact and forgets the tokens.
+ *
+ * What a match means: a decoy appeared in an outbound packet that entered OUR tunnel (a DNS lookup,
+ * or traffic of an app that is already contained). Both tunnels drop that packet, so a match is a
+ * blocked send attempt, not proof of a leak. Encrypted (TLS) payloads never match, and traffic that
+ * does not pass through our tunnel is not seen at all. This is not runtime taint tracking.
  */
 object CanaryManager {
     const val PREFIX = "DHRX-"
@@ -38,15 +42,31 @@ object CanaryManager {
     private const val KEY_ACCOUNT = "account_number"
     private const val KEY_CONTACT_TOKEN = "contact_token"
     private const val KEY_CONTACT_RAW_ID = "contact_raw_id"
+    private const val KEY_ENABLED = "decoys_enabled"
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val reads = ConcurrentHashMap<String, Long>()
 
     @Volatile private var tokens: List<CanaryToken> = emptyList()
 
-    /** Creates (or reloads) all four canaries on a background thread. Safe to call on every app start. */
+    /** True only after the user explicitly opted in to decoys. */
+    fun isEnabled(context: Context): Boolean =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getBoolean(KEY_ENABLED, false)
+
+    /** Opt in (plants decoys) or opt out (removes the decoy contact and all tokens). */
+    fun setEnabled(context: Context, enabled: Boolean) {
+        val appContext = context.applicationContext
+        appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_ENABLED, enabled).commit()
+        if (enabled) plantCanaries(appContext) else removeCanaries(appContext)
+    }
+
+    /** Creates (or reloads) the canaries on a background thread, but only when the user opted in. */
     fun plantCanaries(context: Context) {
         val appContext = context.applicationContext
+        if (!isEnabled(appContext)) {
+            tokens = emptyList()
+            return
+        }
         scope.launch {
             val prefs = appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             val uuid = prefs.getString(KEY_UUID, null) ?: "$PREFIX${UUID.randomUUID()}"
@@ -73,16 +93,34 @@ object CanaryManager {
     /** Current canary tokens; empty until [plantCanaries] finishes. */
     fun getActiveCanaries(): List<CanaryToken> = tokens
 
-    /** Records that [pkg] was seen sending [token] at [ts]. */
-    fun markRead(token: String, pkg: String, ts: Long) {
+    /** Records that [pkg] attempted to send [token] at [ts] (the packet was dropped). */
+    fun markAttempt(token: String, pkg: String, ts: Long) {
         reads[key(token, pkg)] = ts
     }
 
-    /** True if [pkg] has been seen sending [token] since the process started. */
-    fun isRead(token: String, pkg: String): Boolean = reads.containsKey(key(token, pkg))
+    /** When [pkg] last attempted to send [token], or null if never. */
+    fun lastAttemptAt(token: String, pkg: String): Long? = reads[key(token, pkg)]
 
-    /** When [pkg] was last seen sending [token], or null if never. */
-    fun lastReadAt(token: String, pkg: String): Long? = reads[key(token, pkg)]
+    /** Removes the decoy contact (if we planted one) and clears all tokens. */
+    private fun removeCanaries(context: Context) {
+        tokens = emptyList()
+        reads.clear()
+        scope.launch {
+            val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+            val rawId = prefs.getLong(KEY_CONTACT_RAW_ID, -1L)
+            if (rawId > 0) {
+                runCatching {
+                    context.contentResolver.delete(
+                        android.content.ContentUris.withAppendedId(ContactsContract.RawContacts.CONTENT_URI, rawId),
+                        null,
+                        null,
+                    )
+                }.onFailure { Log.w(TAG, "Could not remove decoy contact", it) }
+            }
+            prefs.edit().clear().putBoolean(KEY_ENABLED, false).apply()
+            Log.i(TAG, "Decoys removed")
+        }
+    }
 
     private fun key(token: String, pkg: String) = "$pkg|$token"
 

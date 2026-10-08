@@ -23,6 +23,15 @@ interface EventDao {
             "ORDER BY timestamp ASC, id ASC",
     )
     suspend fun forPackageSince(pkg: String, devicePkg: String, since: Long): List<Event>
+
+    @Query("SELECT MIN(timestamp) FROM events WHERE pkg = :pkg AND signalId = :type")
+    suspend fun firstTime(pkg: String, type: String): Long?
+
+    @Query("DELETE FROM events WHERE timestamp < :cutoff")
+    suspend fun deleteOlderThan(cutoff: Long): Int
+
+    @Query("DELETE FROM events WHERE id NOT IN (SELECT id FROM events ORDER BY id DESC LIMIT :keep)")
+    suspend fun keepNewest(keep: Int): Int
 }
 
 @Dao
@@ -36,6 +45,12 @@ interface ConnectionDao {
     /** Newest blocked connections first. */
     @Query("SELECT * FROM connections ORDER BY timestamp DESC LIMIT 500")
     fun observeRecent(): Flow<List<Connection>>
+
+    @Query("DELETE FROM connections WHERE timestamp < :cutoff")
+    suspend fun deleteOlderThan(cutoff: Long): Int
+
+    @Query("DELETE FROM connections WHERE id NOT IN (SELECT id FROM connections ORDER BY id DESC LIMIT :keep)")
+    suspend fun keepNewest(keep: Int): Int
 }
 
 @Dao
@@ -52,4 +67,10 @@ interface RiskScoreDao {
     /** The most recent score recorded for each package. */
     @Query("SELECT * FROM risk_scores WHERE id IN (SELECT MAX(id) FROM risk_scores GROUP BY pkg)")
     fun observeLatestPerPackage(): Flow<List<RiskScore>>
+
+    @Query("DELETE FROM risk_scores WHERE timestamp < :cutoff")
+    suspend fun deleteOlderThan(cutoff: Long): Int
+
+    @Query("DELETE FROM risk_scores WHERE id NOT IN (SELECT id FROM risk_scores ORDER BY id DESC LIMIT :keep)")
+    suspend fun keepNewest(keep: Int): Int
 }

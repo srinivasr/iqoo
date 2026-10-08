@@ -6,14 +6,14 @@ plugins {
 
 android {
     namespace = "com.dhrashta.x"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.dhrashta.x"
         minSdk = 26
-        targetSdk = 34
-        versionCode = 1
-        versionName = "1.0.0"
+        targetSdk = 36
+        versionCode = 2
+        versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables.useSupportLibrary = true
     }
@@ -48,7 +48,18 @@ android {
 
     packaging {
         resources.excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        jniLibs.useLegacyPackaging = true
+        // Keep native libraries uncompressed and page-aligned in the APK (needed for 16 KB page devices).
+        jniLibs.useLegacyPackaging = false
+    }
+
+    // Model files must stay uncompressed so they can be read as-is.
+    androidResources {
+        noCompress += "onnx"
+    }
+
+    lint {
+        // Only en, hi and bn carry the newest strings; other locales fall back to English for them.
+        disable += "MissingTranslation"
     }
 }
 
@@ -71,14 +82,12 @@ dependencies {
     kapt("androidx.room:room-compiler:2.6.1")
     implementation("androidx.work:work-runtime-ktx:2.9.1")
 
-    implementation("org.smali:dexlib2:2.5.2")
-    implementation("org.tensorflow:tensorflow-lite:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-gpu:2.16.1")
-    implementation("org.tensorflow:tensorflow-lite-support:0.4.4")
-    implementation("com.google.mediapipe:tasks-genai:0.10.14")
-    implementation("org.json:json:20240303")
+    // On-device inference for the bundled ONNX models (NNAPI accelerator when available, else CPU).
+    implementation("com.microsoft.onnxruntime:onnxruntime-android:1.22.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 
     testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")

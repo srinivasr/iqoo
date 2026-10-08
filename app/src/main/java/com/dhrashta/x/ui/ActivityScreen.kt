@@ -93,7 +93,7 @@ fun buildActivity(
     events.forEach { event ->
         val device = event.pkg == EventLogger.DEVICE_PKG
         val (kind, title) = when (event.signalId) {
-            EventLogger.CANARY_READ -> ActivityKind.Alert to res.getString(R.string.act_canary, name(event.pkg))
+            EventLogger.CANARY_SEND_ATTEMPT -> ActivityKind.Alert to res.getString(R.string.act_canary, name(event.pkg))
             EventLogger.BEACON_UNKNOWN_HOST -> ActivityKind.Network to res.getString(R.string.act_beacon, name(event.pkg))
             EventLogger.A11Y_ENABLED -> ActivityKind.Review to res.getString(R.string.act_a11y, name(event.pkg))
             EventLogger.SIDELOAD -> ActivityKind.Review to res.getString(R.string.act_sideload, name(event.pkg))

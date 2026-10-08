@@ -12,6 +12,13 @@ import android.provider.Settings
 import android.speech.tts.TextToSpeech
 import android.widget.Toast
 import androidx.activity.ComponentActivity
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.ui.Modifier
+import com.dhrashta.x.ui.theme.Canvas
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
@@ -28,6 +35,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.dhrashta.x.R
 import com.dhrashta.x.data.AllowList
+import com.dhrashta.x.data.ModelStatus
+import com.dhrashta.x.data.ModelStatusStore
+import com.dhrashta.x.decision.ThreatList
 import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
@@ -53,8 +63,10 @@ class MainActivity : ComponentActivity() {
     private var ttsReady = false
 
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
-    private val contactsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
-        if (granted) CanaryManager.plantCanaries(this)
+    // Decoys are opt-in: this launcher runs only after the user taps "Turn on" for decoys. If the
+    // contacts permission is denied, the non-contact decoys are still planted.
+    private val contactsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
+        CanaryManager.setEnabled(this, true)
         refresh()
     }
     private val vpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -86,7 +98,13 @@ class MainActivity : ComponentActivity() {
             requestNotificationsOnce()
         }
         tts = TextToSpeech(this) { status -> ttsReady = status == TextToSpeech.SUCCESS }
-        setContent { DhrashtaTheme { AppContent() } }
+        // Target SDK 35+ draws edge-to-edge; pad content by the system bars so nothing sits under them.
+        enableEdgeToEdge()
+        setContent {
+            DhrashtaTheme {
+                Box(Modifier.fillMaxSize().background(Canvas).safeDrawingPadding()) { AppContent() }
+            }
+        }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -120,8 +138,12 @@ class MainActivity : ComponentActivity() {
         val events by remember { EventLogger.observeEvents(applicationContext) }.collectAsStateWithLifecycle(emptyList())
         val connections by remember { EventLogger.observeConnections(applicationContext) }.collectAsStateWithLifecycle(emptyList())
         val installed by produceState<List<InstalledApp>?>(null, tick) { value = loadInstalledApps(applicationContext) }
-        val models by produceState(emptyMap<Int, Boolean>()) { value = withContext(Dispatchers.IO) { modelStatus() } }
-        val pausedUids = remember(tick) { GuardVpnService.pausedUids(applicationContext) }
+        val modelStatus by ModelStatusStore.state.collectAsStateWithLifecycle()
+        val threatInfo by produceState<ThreatList.Info?>(null, tick) {
+            value = withContext(Dispatchers.IO) { runCatching { ThreatList.info(applicationContext) }.getOrNull() }
+        }
+        // Only UIDs inside an ESTABLISHED tunnel are shown as paused; a request is not containment.
+        val pausedUids = remember(tick) { GuardVpnService.containedUids(applicationContext) }
         val trusted = remember(tick) { AllowList.get(applicationContext) }
         val language = remember(tick) { AppLanguage.current(this) }
 
@@ -133,15 +155,16 @@ class MainActivity : ComponentActivity() {
         val activity = remember(scores, events, connections, installed) {
             buildActivity(resources, scores, events, connections, labels, packagesByUid, installed.orEmpty())
         }
-        val status = remember(tick, evaluation.monitoring, models) {
+        val status = remember(tick, evaluation.monitoring, modelStatus, threatInfo) {
+            val dnsOn = VpnService.prepare(this) == null && GuardVpnService.dnsMonitorEnabled(applicationContext)
             SettingsStatus(
                 monitoring = evaluation.monitoring,
                 vpnConsent = VpnService.prepare(this) == null,
                 dnsMonitor = GuardVpnService.dnsMonitorEnabled(applicationContext),
                 usageAccess = UsageWatcher.hasUsageAccess(applicationContext),
                 notifications = notificationsEnabled(),
-                contacts = ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED,
-                models = models,
+                decoys = CanaryManager.isEnabled(applicationContext),
+                coverage = coverage(evaluation.monitoring, dnsOn, modelStatus, threatInfo),
             )
         }
         val statusMessage = when {
@@ -198,7 +221,8 @@ class MainActivity : ComponentActivity() {
                 onEnableDnsMonitor = { withVpnConsent { NetworkPause.startDnsMonitor(this) } },
                 onUsageAccess = { openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS) },
                 onNotifications = ::requestNotifications,
-                onContacts = { contactsPermission.launch(Manifest.permission.WRITE_CONTACTS) },
+                onDecoys = ::toggleDecoys,
+                onSelfTest = ::runSelfTest,
                 onAccessibilitySettings = { GuidedRecovery.openA11ySettings(this) },
                 onChangeLanguage = { destination = Screen.Language(firstRun = false) },
                 onUntrust = { pkg -> setTrusted(pkg, false) },
@@ -240,14 +264,102 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Navigates to the "paused" screen only after the tunnel containing the app really exists. */
     private fun pause(risk: AppRisk) {
-        if (NetworkPause.pause(this, risk.app.uid)) {
-            destination = Screen.Paused(risk.app.pkg)
-            refreshSoon()
-        } else {
-            toast(getString(R.string.toast_pause_failed, risk.app.label))
+        toast(getString(R.string.toast_pausing, risk.app.label))
+        lifecycleScope.launch {
+            val contained = NetworkPause.pauseAndConfirm(this@MainActivity, risk.app.uid)
+            refresh()
+            if (contained) {
+                destination = Screen.Paused(risk.app.pkg)
+            } else {
+                toast(getString(R.string.toast_pause_failed, risk.app.label))
+            }
         }
     }
+
+    private fun toggleDecoys() {
+        if (CanaryManager.isEnabled(this)) {
+            CanaryManager.setEnabled(this, false)
+            toast(getString(R.string.toast_decoys_off))
+            refresh()
+        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
+            CanaryManager.setEnabled(this, true)
+            refresh()
+        } else {
+            contactsPermission.launch(Manifest.permission.WRITE_CONTACTS)
+        }
+    }
+
+    private fun runSelfTest() {
+        runCatching {
+            startService(Intent(this, DhrashtaForegroundService::class.java).setAction(DhrashtaForegroundService.ACTION_SELF_TEST))
+        }
+        toast(getString(R.string.toast_selftest))
+    }
+
+    /** Every row is derived from live state; nothing is listed as watched unless it is. */
+    private fun coverage(
+        monitoring: Boolean,
+        dnsOn: Boolean,
+        model: ModelStatus,
+        threats: ThreatList.Info?,
+    ): List<CoverageItem> = listOf(
+        CoverageItem(
+            getString(R.string.cov_a11y),
+            getString(R.string.cov_a11y_detail),
+            if (monitoring) CoverageState.On else CoverageState.Off,
+        ),
+        CoverageItem(
+            getString(R.string.cov_dns),
+            getString(R.string.cov_dns_detail),
+            if (dnsOn) CoverageState.On else CoverageState.Off,
+        ),
+        CoverageItem(
+            getString(R.string.cov_traffic),
+            getString(R.string.cov_traffic_detail),
+            CoverageState.NotMonitored,
+        ),
+        CoverageItem(
+            getString(R.string.cov_bank),
+            getString(R.string.cov_bank_detail),
+            if (UsageWatcher.hasUsageAccess(applicationContext)) CoverageState.On else CoverageState.Off,
+        ),
+        CoverageItem(
+            getString(R.string.cov_decoys),
+            getString(R.string.cov_decoys_detail),
+            if (CanaryManager.isEnabled(applicationContext)) CoverageState.On else CoverageState.Off,
+        ),
+        CoverageItem(
+            getString(R.string.cov_netmodel),
+            if (model.networkLoaded) {
+                getString(
+                    R.string.cov_netmodel_detail,
+                    model.networkBackend.orEmpty(),
+                    model.networkSelfTestSummary ?: getString(R.string.selftest_pending),
+                )
+            } else {
+                getString(R.string.cov_model_missing)
+            },
+            if (model.networkLoaded && model.networkSelfTestPassed == true) CoverageState.On else CoverageState.Off,
+        ),
+        CoverageItem(
+            getString(R.string.cov_netmodel_live),
+            getString(R.string.cov_netmodel_live_detail),
+            if (model.networkLiveInput) CoverageState.On else CoverageState.NotMonitored,
+        ),
+        CoverageItem(
+            getString(R.string.cov_a11ymodel),
+            if (model.a11yModelLoaded) model.a11yBackend.orEmpty() else getString(R.string.cov_a11ymodel_missing),
+            if (model.a11yModelLoaded) CoverageState.On else CoverageState.Off,
+        ),
+        CoverageItem(
+            getString(R.string.cov_threats),
+            threats?.takeIf { it.entries > 0 }?.let { getString(R.string.cov_threats_detail, it.entries, it.source) }
+                ?: getString(R.string.cov_threats_none),
+            if ((threats?.entries ?: 0) > 0) CoverageState.On else CoverageState.Off,
+        ),
+    )
 
     private fun resume(risk: AppRisk) {
         NetworkPause.resume(this, risk.app.uid)
@@ -304,15 +416,6 @@ class MainActivity : ComponentActivity() {
             return
         }
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "explanation")
-    }
-
-    private fun modelStatus(): Map<Int, Boolean> {
-        val assets = assets.list("").orEmpty().toSet()
-        return linkedMapOf(
-            R.string.model_a11y to ("accessibility_mlp.tflite" in assets),
-            R.string.model_network to ("network_anomaly.tflite" in assets),
-            R.string.model_llm to ("smollm2_360m.gguf" in assets),
-        )
     }
 
     private fun notificationsEnabled() = NotificationManagerCompat.from(this).areNotificationsEnabled()

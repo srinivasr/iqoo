@@ -13,7 +13,6 @@
         <item quantity="one">%d ప్రమాదకర యాప్‌కు ఇంటర్నెట్ నిలిపివేయబడింది</item>
         <item quantity="other">%d ప్రమాదకర యాప్‌లకు ఇంటర్నెట్ నిలిపివేయబడింది</item>
     </plurals>
-    <string name="explainer_fallback">%1$s యాక్సెసిబిలిటీ యాక్సెస్‌ను ఆన్ చేసింది, ఇది నమోదైన యాక్సెసిబిలిటీ టూల్ కాదు. ఇది మీ స్క్రీన్‌ను చదవగలదు. దయచేసి దీన్ని పరిశీలించి, నమ్మకం లేకపోతే తొలగించండి.</string>
 
     <string name="nav_home">హోమ్</string>
     <string name="nav_activity">కార్యకలాపం</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">తెలిసిన ముప్పుతో సరిపోలుతోంది</string>
     <string name="ev_threat_detail">ఈ యాప్ స్థానిక ముప్పు జాబితాలో ఉంది.</string>
-    <string name="ev_canary_title">నకిలీ డేటాను ఫోన్ బయటకు పంపింది</string>
-    <string name="ev_canary_detail">ఉంచిన DHRX నకిలీ విలువ ఈ ఫోన్ నుండి బయటకు వెళ్లడం గమనించబడింది.</string>
     <string name="ev_beacon_title">పదే పదే సర్వర్ కనెక్షన్‌లు</string>
     <string name="ev_beacon_detail">ఒకే తెలియని సర్వర్‌ను నిర్ణీత సమయానికి వెతికింది.</string>
     <string name="ev_a11y_title">యాక్సెసిబిలిటీ యాక్సెస్ ఆన్‌లో ఉంది</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">త్వరిత తనిఖీ</string>
     <string name="details_score_line">%1$s · ప్రమాద స్కోర్ 100లో %2$d</string>
     <string name="details_score_line_time">%1$s · ప్రమాద స్కోర్ 100లో %2$d · %3$s</string>
-    <string name="explain_trusted">మీరు %1$s ను విశ్వసనీయంగా గుర్తించారు, కాబట్టి DHRASHTAX దీన్ని హెచ్చరించదు.</string>
     <string name="explain_clean">%1$s లో హెచ్చరిక సంకేతాలు లేవు (%2$s), మేము గమనించే సున్నితమైన యాక్సెస్ కూడా లేదు.</string>
     <string name="explain_findings">%1$s: %2$s.</string>
     <string name="explain_separator">; </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">సమీక్షలు, నిరోధించిన కనెక్షన్‌లు, పరికర మార్పులు జరిగినప్పుడు ఇక్కడ కనిపిస్తాయి.</string>
     <string name="act_reviewed">%1$s సమీక్షించబడింది</string>
     <string name="act_score_detail">ప్రమాద స్కోర్ %1$d · %2$s</string>
-    <string name="act_canary">%1$s నకిలీ డేటాను ఫోన్ బయటకు పంపింది</string>
     <string name="act_beacon">%1$s నిర్ణీత సమయానికి సర్వర్‌ను సంప్రదించింది</string>
     <string name="act_a11y">%1$s కోసం యాక్సెసిబిలిటీ యాక్సెస్ ఆన్ అయింది</string>
     <string name="act_sideload">%1$s Play Store బయట నుండి ఇన్‌స్టాల్ అయింది</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">బ్యాంకింగ్ యాప్ పర్యవేక్షణ</string>
     <string name="set_bank_detail">బ్యాంకింగ్ యాప్ తెరిచినప్పుడు గమనిస్తుంది, ఆ సమయంలో దొంగిలించే డేటాను పట్టుకోవడానికి. Usage access అవసరం.</string>
     <string name="set_allow">అనుమతించు</string>
-    <string name="set_decoy_title">నకిలీ కాంటాక్ట్</string>
-    <string name="set_decoy_detail">డేటా దొంగ మాత్రమే బయటకు పంపే నకిలీ “DHRASHTA Canary” కాంటాక్ట్‌ను జోడిస్తుంది.</string>
     <string name="set_alerts_title">ముప్పు హెచ్చరికలు</string>
     <string name="set_alerts_detail">ప్రమాదకర యాప్ కనిపించినప్పుడు నోటిఫికేషన్‌లు.</string>
     <string name="set_on">ఆన్</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">తొలగించు</string>
     <string name="set_language">యాప్ భాష</string>
     <string name="set_change">మార్చు</string>
-    <string name="set_ai">ఆన్-డివైస్ AI</string>
-    <string name="model_a11y">యాక్సెసిబిలిటీ ప్రవర్తన మోడల్</string>
-    <string name="model_network">నెట్‌వర్క్ అసాధారణత మోడల్</string>
-    <string name="model_llm">వివరణ మోడల్ (SmolLM2)</string>
-    <string name="model_installed">ఇన్‌స్టాల్ అయింది</string>
-    <string name="model_missing">ఇన్‌స్టాల్ కాలేదు</string>
-    <string name="set_ai_note">మోడల్ ఫైల్ లేకపోతే, ఆ ఫీచర్ నియమాలపై మాత్రమే పనిచేస్తుంది.</string>
     <string name="set_about">గురించి</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">ఆన్-డివైస్ ముప్పు గుర్తింపు. ఏ యాప్ డేటా ఈ ఫోన్ నుండి బయటకు వెళ్లదు.</string>
