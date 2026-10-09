@@ -46,6 +46,10 @@ object Explanations {
         "D2" -> R.string.expl_sig_d2
         "E4" -> R.string.expl_sig_e4
         "E5" -> R.string.expl_sig_e5
+        "E6" -> R.string.expl_sig_e6
+        "C6" -> R.string.expl_sig_c6
+        "C7" -> R.string.expl_sig_c7
+        "BT1" -> R.string.expl_sig_bt1
         "HIGH_TAINT_MATCH" -> R.string.expl_sig_taint
         "S0_HIGH" -> R.string.expl_sig_s0_high
         "S0_MEDIUM" -> R.string.expl_sig_s0_medium

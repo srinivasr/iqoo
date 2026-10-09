@@ -62,6 +62,8 @@ data class InstalledApp(
     val requestsOverlay: Boolean,
     val readsSms: Boolean,
     val installsPackages: Boolean,
+    val sensorPerms: Boolean,
+    val bluetoothPerms: Boolean,
     val inThreatList: Boolean,
     val mimicsBrand: Boolean,
 ) {
@@ -127,6 +129,9 @@ suspend fun loadInstalledApps(context: Context): List<InstalledApp> = withContex
             requestsOverlay = info.requests(Manifest.permission.SYSTEM_ALERT_WINDOW),
             readsSms = info.granted(Manifest.permission.READ_SMS) || info.granted(Manifest.permission.RECEIVE_SMS),
             installsPackages = info.requests(Manifest.permission.REQUEST_INSTALL_PACKAGES),
+            sensorPerms = info.requests(Manifest.permission.CAMERA) || info.requests(Manifest.permission.RECORD_AUDIO) ||
+                info.requests(Manifest.permission.BODY_SENSORS) || info.requests(Manifest.permission.ACTIVITY_RECOGNITION),
+            bluetoothPerms = info.requestedPermissions?.any { it.startsWith("android.permission.BLUETOOTH") } == true,
             inThreatList = threatList.containsPackage(info.packageName),
             mimicsBrand = runCatching {
                 BrandHeuristic.mimics(label, info.packageName, installer, appInfo.flags and ApplicationInfo.FLAG_SYSTEM != 0)
@@ -197,6 +202,9 @@ fun assessApps(
             if (app.readsSms) add(ev(R.string.ev_sms_title, R.string.ev_sms_detail, 10))
             if (app.requestsOverlay) add(ev(R.string.ev_overlay_title, R.string.ev_overlay_detail, 10))
             if (app.installsPackages) add(ev(R.string.ev_install_title, R.string.ev_install_detail, 5))
+            if (app.sideloaded && app.sensorPerms) add(ev(R.string.ev_sensor_title, R.string.ev_sensor_detail, 5))
+            if (app.sideloaded && app.bluetoothPerms) add(ev(R.string.ev_bt_title, R.string.ev_bt_detail, 5))
+            if (appEvents.any { it.signalId == EventLogger.COVERT_UPLOAD }) add(ev(R.string.ev_covert_title, R.string.ev_covert_detail, 20))
             liveScores[app.pkg]?.takeIf { it.lastAlertAt != null && now - it.lastAlertAt < LIVE_EVIDENCE_MILLIS }?.let { live ->
                 add(
                     evs(

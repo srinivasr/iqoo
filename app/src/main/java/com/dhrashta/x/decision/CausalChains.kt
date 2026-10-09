@@ -29,7 +29,10 @@ object CausalChains {
     /** CC-5: work profile created, then THIS app appeared inside a profile within 30 min. */
     val CC5 = Chain("CC-5", listOf(EventLogger.WORK_PROFILE_CREATED, EventLogger.CLONED_APP_LAUNCHED), minutes(30), 20)
 
-    val ALL = listOf(CC1, CC2, CC3, CC4, CC5)
+    /** CC-6: a sideloaded app later uploads data while the phone is idle (screen-off + stationary). */
+    val CC6 = Chain("CC-6", listOf(EventLogger.SIDELOAD, EventLogger.COVERT_UPLOAD), minutes(60), 10)
+
+    val ALL = listOf(CC1, CC2, CC3, CC4, CC5, CC6)
 
     /** Maximum total bonus contributed by causal chains. */
     const val MAX_BONUS = 30

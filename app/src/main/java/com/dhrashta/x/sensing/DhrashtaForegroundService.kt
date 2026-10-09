@@ -48,6 +48,7 @@ class DhrashtaForegroundService : Service() {
     private lateinit var devicePostureWatcher: DevicePostureWatcher
     private lateinit var usageWatcher: UsageWatcher
     private lateinit var profileAppWatcher: ProfileAppWatcher
+    private lateinit var sensorContext: SensorContextExtractor
     private lateinit var identityResolver: IdentityResolver
     private lateinit var inspector: A11yInspector
     private lateinit var postureChecker: PostureChecker
@@ -124,11 +125,13 @@ class DhrashtaForegroundService : Service() {
         devicePostureWatcher = DevicePostureWatcher(this)
         usageWatcher = UsageWatcher(this)
         profileAppWatcher = ProfileAppWatcher(this)
+        sensorContext = SensorContextExtractor(this)
         observer.start()
         packageWatcher.start()
         devicePostureWatcher.start()
         usageWatcher.start()
         profileAppWatcher.start()
+        sensorContext.start()
         NetworkPause.startDnsMonitor(this)
         EvaluationStateStore.update {
             it.copy(
@@ -167,6 +170,7 @@ class DhrashtaForegroundService : Service() {
         devicePostureWatcher.stop()
         usageWatcher.stop()
         profileAppWatcher.stop()
+        sensorContext.stop()
         accessibilityModel.close()
         networkModel?.close()
         staticModel?.close()
@@ -364,6 +368,7 @@ class DhrashtaForegroundService : Service() {
                 recentEvents = recentEvents,
                 a11yEnabledAt = enabledAt,
                 staticScore = staticScore,
+                offlineBluetoothContext = com.dhrashta.x.data.SensorStateStore.current.let { it.offline && it.bluetoothOn },
             )
             EventLogger.recordRisk(pkg, result.score, result.band.name)
             EventLogger.recordSignals(pkg, result)

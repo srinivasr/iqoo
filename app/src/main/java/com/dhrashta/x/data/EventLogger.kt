@@ -17,6 +17,8 @@ object EventLogger {
     const val BEACON_UNKNOWN_HOST = "beacon_unknown_host"
     /** The live network model scored this app's last 10 windows above its alert threshold. */
     const val NETWORK_ML_ALERT = "network_ml_alert"
+    /** A watched app uploaded data while the phone was screen-off and stationary (device sensors). */
+    const val COVERT_UPLOAD = "covert_upload"
     const val BANK_FOREGROUND = "bank_foreground"
     /**
      * A planted decoy was seen in an outbound packet that entered our tunnel and was dropped there.

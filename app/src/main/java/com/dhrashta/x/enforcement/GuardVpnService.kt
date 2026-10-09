@@ -17,6 +17,8 @@ import androidx.core.app.NotificationCompat
 import com.dhrashta.x.R
 import com.dhrashta.x.ai.LiveNetworkModel
 import com.dhrashta.x.data.LiveNetworkStore
+import com.dhrashta.x.data.MotionState
+import com.dhrashta.x.data.SensorStateStore
 import com.dhrashta.x.data.ModelStatusStore
 import com.dhrashta.x.enforcement.relay.Ipv4
 import com.dhrashta.x.enforcement.relay.LiveWindowFeatures
@@ -295,6 +297,19 @@ class GuardVpnService : VpnService() {
                         .getOrNull() ?: continue
                     val pkg = packageForUid(sequence.uid)
                     LiveNetworkStore.record(pkg, sequence.uid, score.probability, sequence.activeWindows, now, score.alert)
+                    // Device-sensor correlation: a watched app uploading while the phone is idle
+                    // (screen off + stationary) is covert activity. bytes_up is feature index 0.
+                    val uploadBytes = sequence.windows.last()[0]
+                    val ctx = SensorStateStore.current
+                    if (SensorStateStore.available && uploadBytes >= COVERT_UPLOAD_MIN_BYTES &&
+                        !ctx.screenOn && ctx.motion == MotionState.STATIONARY
+                    ) {
+                        serviceScope.launch {
+                            EventLogger.logEvent(pkg, EventLogger.COVERT_UPLOAD, now)
+                            DhrashtaForegroundService.requestEvaluation(this@GuardVpnService, pkg)
+                        }
+                        Log.i(TAG, "Covert upload: $pkg sent ${uploadBytes.toInt()}B while screen-off & stationary")
+                    }
                     Log.i(TAG, "Live $pkg p=${"%.4f".format(score.probability)} logit=${"%.2f".format(score.logit)} " +
                         "active=${sequence.activeWindows}/10 alert=${score.alert} last=${sequence.windows.last().joinToString(",") { "%.1f".format(it) }}")
                     if (score.alert) onLiveAlert(pkg, now, score.probability)
@@ -541,6 +556,8 @@ class GuardVpnService : VpnService() {
         private const val KEY_INSPECTED = "inspected_uids"
         private const val LIVE_TICK_MILLIS = 10_000L
         private const val LIVE_ALERT_COOLDOWN_MILLIS = 120_000L
+        /** Min upload bytes in a 10 s window to treat idle-time traffic as a covert upload. */
+        private const val COVERT_UPLOAD_MIN_BYTES = 1_024f
         private const val CANARY_COOLDOWN_MILLIS = 60_000L
         private const val BLOCKED_LOG_INTERVAL_MILLIS = 10_000L
     }

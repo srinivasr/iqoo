@@ -37,6 +37,8 @@ import com.dhrashta.x.R
 import com.dhrashta.x.data.AllowList
 import com.dhrashta.x.data.ModelStatus
 import com.dhrashta.x.data.ModelStatusStore
+import com.dhrashta.x.data.MotionState
+import com.dhrashta.x.data.SensorStateStore
 import com.dhrashta.x.data.StaticScanStore
 import com.dhrashta.x.data.LiveNetworkStore
 import com.dhrashta.x.decision.ThreatList
@@ -145,6 +147,7 @@ class MainActivity : ComponentActivity() {
         val connections by remember { EventLogger.observeConnections(applicationContext) }.collectAsStateWithLifecycle(emptyList())
         val installed by produceState<List<InstalledApp>?>(null, tick) { value = loadInstalledApps(applicationContext) }
         val modelStatus by ModelStatusStore.state.collectAsStateWithLifecycle()
+        val sensorCtx by SensorStateStore.state.collectAsStateWithLifecycle()
         val staticVerdicts by remember { StaticScanStore.load(applicationContext); StaticScanStore.state }.collectAsStateWithLifecycle()
         val liveScores by LiveNetworkStore.state.collectAsStateWithLifecycle()
         val threatInfo by produceState<ThreatList.Info?>(null, tick) {
@@ -178,7 +181,7 @@ class MainActivity : ComponentActivity() {
                 usageAccess = UsageWatcher.hasUsageAccess(applicationContext),
                 notifications = notificationsEnabled(),
                 decoys = CanaryManager.isEnabled(applicationContext),
-                coverage = coverage(evaluation.monitoring, dnsOn, modelStatus, threatInfo, inspectingUids.size),
+                coverage = coverage(evaluation.monitoring, dnsOn, modelStatus, threatInfo, inspectingUids.size, sensorCtx),
             )
         }
         val statusMessage = when {
@@ -338,7 +341,33 @@ class MainActivity : ComponentActivity() {
         model: ModelStatus,
         threats: ThreatList.Info?,
         watched: Int,
+        sensor: com.dhrashta.x.data.SensorContext,
     ): List<CoverageItem> = listOf(
+        CoverageItem(
+            getString(R.string.cov_sensor),
+            if (SensorStateStore.available) {
+                getString(
+                    R.string.cov_sensor_detail,
+                    getString(motionLabel(sensor.motion)),
+                    getString(if (sensor.screenOn) R.string.screen_on else R.string.screen_off),
+                    if (sensor.charging) getString(R.string.charging) else "${sensor.batteryLevel}%",
+                )
+            } else {
+                getString(R.string.cov_sensor_waiting)
+            },
+            if (SensorStateStore.available) CoverageState.On else CoverageState.NotMonitored,
+        ),
+        CoverageItem(
+            getString(R.string.cov_btexfil),
+            if (!SensorStateStore.available) {
+                getString(R.string.cov_btexfil_idle)
+            } else if (sensor.offline && sensor.bluetoothOn) {
+                getString(R.string.cov_btexfil_risk)
+            } else {
+                getString(R.string.cov_btexfil_ok)
+            },
+            if (sensor.offline && sensor.bluetoothOn) CoverageState.Off else CoverageState.On,
+        ),
         CoverageItem(
             getString(R.string.cov_a11y),
             getString(R.string.cov_a11y_detail),
@@ -422,6 +451,13 @@ class MainActivity : ComponentActivity() {
             if ((threats?.entries ?: 0) > 0) CoverageState.On else CoverageState.Off,
         ),
     )
+
+    private fun motionLabel(m: MotionState): Int = when (m) {
+        MotionState.STATIONARY -> R.string.motion_stationary
+        MotionState.WALKING -> R.string.motion_walking
+        MotionState.ACTIVE -> R.string.motion_active
+        MotionState.UNKNOWN -> R.string.motion_unknown
+    }
 
     private fun resume(risk: AppRisk) {
         NetworkPause.resume(this, risk.app.uid)
