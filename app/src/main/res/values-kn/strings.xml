@@ -13,7 +13,6 @@
         <item quantity="one">%d ಅಪಾಯಕಾರಿ ಆ್ಯಪ್‌ನ ಇಂಟರ್ನೆಟ್ ನಿಲ್ಲಿಸಲಾಗಿದೆ</item>
         <item quantity="other">%d ಅಪಾಯಕಾರಿ ಆ್ಯಪ್‌ಗಳ ಇಂಟರ್ನೆಟ್ ನಿಲ್ಲಿಸಲಾಗಿದೆ</item>
     </plurals>
-    <string name="explainer_fallback">%1$s ಪ್ರವೇಶಸಾಧ್ಯತೆ ಅನುಮತಿಯನ್ನು ಆನ್ ಮಾಡಿದೆ ಮತ್ತು ಇದು ನೋಂದಾಯಿತ ಪ್ರವೇಶಸಾಧ್ಯತೆ ಸಾಧನವಲ್ಲ. ಇದು ನಿಮ್ಮ ಪರದೆಯನ್ನು ಓದಬಹುದು. ದಯವಿಟ್ಟು ಇದನ್ನು ಪರಿಶೀಲಿಸಿ, ನಂಬಿಕೆ ಇಲ್ಲದಿದ್ದರೆ ತೆಗೆದುಹಾಕಿ.</string>
 
     <string name="nav_home">ಮುಖಪುಟ</string>
     <string name="nav_activity">ಚಟುವಟಿಕೆ</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">ತಿಳಿದಿರುವ ಬೆದರಿಕೆಗೆ ಹೊಂದುತ್ತದೆ</string>
     <string name="ev_threat_detail">ಈ ಆ್ಯಪ್ ಸ್ಥಳೀಯ ಬೆದರಿಕೆ ಪಟ್ಟಿಯಲ್ಲಿದೆ.</string>
-    <string name="ev_canary_title">ನಕಲಿ ಡೇಟಾವನ್ನು ಫೋನ್‌ನಿಂದ ಹೊರಗೆ ಕಳುಹಿಸಿದೆ</string>
-    <string name="ev_canary_detail">ಇರಿಸಿದ DHRX ನಕಲಿ ಮೌಲ್ಯ ಈ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುತ್ತಿರುವುದು ಕಂಡುಬಂದಿದೆ.</string>
     <string name="ev_beacon_title">ಪದೇ ಪದೇ ಸರ್ವರ್ ಸಂಪರ್ಕಗಳು</string>
     <string name="ev_beacon_detail">ಒಂದೇ ಅಜ್ಞಾತ ಸರ್ವರ್ ಅನ್ನು ನಿಗದಿತ ಸಮಯಕ್ಕೆ ಹುಡುಕಿದೆ.</string>
     <string name="ev_a11y_title">ಪ್ರವೇಶಸಾಧ್ಯತೆ ಅನುಮತಿ ಆನ್ ಆಗಿದೆ</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">ತ್ವರಿತ ಪರಿಶೀಲನೆ</string>
     <string name="details_score_line">%1$s · ಅಪಾಯ ಅಂಕ 100 ರಲ್ಲಿ %2$d</string>
     <string name="details_score_line_time">%1$s · ಅಪಾಯ ಅಂಕ 100 ರಲ್ಲಿ %2$d · %3$s</string>
-    <string name="explain_trusted">ನೀವು %1$s ಅನ್ನು ವಿಶ್ವಾಸಾರ್ಹ ಎಂದು ಗುರುತಿಸಿದ್ದೀರಿ, ಹಾಗಾಗಿ DHRASHTAX ಇದನ್ನು ಎಚ್ಚರಿಸುವುದಿಲ್ಲ.</string>
     <string name="explain_clean">%1$s ನಲ್ಲಿ ಎಚ್ಚರಿಕೆ ಚಿಹ್ನೆಗಳಿಲ್ಲ (%2$s) ಮತ್ತು ನಾವು ಗಮನಿಸುವ ಸೂಕ್ಷ್ಮ ಅನುಮತಿಯೂ ಇಲ್ಲ.</string>
     <string name="explain_findings">%1$s: %2$s.</string>
     <string name="explain_separator">; </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">ಪರಿಶೀಲನೆಗಳು, ತಡೆದ ಸಂಪರ್ಕಗಳು ಮತ್ತು ಸಾಧನ ಬದಲಾವಣೆಗಳು ನಡೆದಂತೆ ಇಲ್ಲಿ ಕಾಣಿಸುತ್ತವೆ.</string>
     <string name="act_reviewed">%1$s ಪರಿಶೀಲಿಸಲಾಗಿದೆ</string>
     <string name="act_score_detail">ಅಪಾಯ ಅಂಕ %1$d · %2$s</string>
-    <string name="act_canary">%1$s ನಕಲಿ ಡೇಟಾವನ್ನು ಫೋನ್‌ನಿಂದ ಹೊರಗೆ ಕಳುಹಿಸಿದೆ</string>
     <string name="act_beacon">%1$s ನಿಗದಿತ ಸಮಯಕ್ಕೆ ಸರ್ವರ್ ಸಂಪರ್ಕಿಸಿದೆ</string>
     <string name="act_a11y">%1$s ಗಾಗಿ ಪ್ರವೇಶಸಾಧ್ಯತೆ ಅನುಮತಿ ಆನ್ ಆಗಿದೆ</string>
     <string name="act_sideload">%1$s Play Store ಹೊರಗಿನಿಂದ ಸ್ಥಾಪನೆಯಾಗಿದೆ</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">ಬ್ಯಾಂಕಿಂಗ್ ಆ್ಯಪ್ ಮೇಲ್ವಿಚಾರಣೆ</string>
     <string name="set_bank_detail">ಬ್ಯಾಂಕಿಂಗ್ ಆ್ಯಪ್ ತೆರೆದಾಗ ಗಮನಿಸುತ್ತದೆ, ಆ ಸಮಯದಲ್ಲಿ ಕದ್ದ ಡೇಟಾವನ್ನು ಹಿಡಿಯಲು. Usage access ಬೇಕು.</string>
     <string name="set_allow">ಅನುಮತಿಸಿ</string>
-    <string name="set_decoy_title">ನಕಲಿ ಸಂಪರ್ಕ</string>
-    <string name="set_decoy_detail">ಡೇಟಾ ಕಳ್ಳ ಮಾತ್ರ ಹೊರಗೆ ಕಳುಹಿಸುವ ನಕಲಿ “DHRASHTA Canary” ಸಂಪರ್ಕವನ್ನು ಸೇರಿಸುತ್ತದೆ.</string>
     <string name="set_alerts_title">ಬೆದರಿಕೆ ಎಚ್ಚರಿಕೆಗಳು</string>
     <string name="set_alerts_detail">ಅಪಾಯಕಾರಿ ಆ್ಯಪ್ ಕಂಡುಬಂದಾಗ ಅಧಿಸೂಚನೆಗಳು.</string>
     <string name="set_on">ಆನ್</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">ತೆಗೆದುಹಾಕಿ</string>
     <string name="set_language">ಆ್ಯಪ್ ಭಾಷೆ</string>
     <string name="set_change">ಬದಲಾಯಿಸಿ</string>
-    <string name="set_ai">ಸಾಧನದಲ್ಲಿನ AI</string>
-    <string name="model_a11y">ಪ್ರವೇಶಸಾಧ್ಯತೆ ನಡವಳಿಕೆ ಮಾದರಿ</string>
-    <string name="model_network">ನೆಟ್‌ವರ್ಕ್ ಅಸಹಜತೆ ಮಾದರಿ</string>
-    <string name="model_llm">ವಿವರಣೆ ಮಾದರಿ (SmolLM2)</string>
-    <string name="model_installed">ಸ್ಥಾಪಿತವಾಗಿದೆ</string>
-    <string name="model_missing">ಸ್ಥಾಪಿತವಾಗಿಲ್ಲ</string>
-    <string name="set_ai_note">ಮಾದರಿ ಫೈಲ್ ಇಲ್ಲದಿದ್ದರೆ, ಆ ವೈಶಿಷ್ಟ್ಯ ನಿಯಮಗಳ ಮೇಲೆ ಮಾತ್ರ ನಡೆಯುತ್ತದೆ.</string>
     <string name="set_about">ಕುರಿತು</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">ಸಾಧನದಲ್ಲೇ ಬೆದರಿಕೆ ಪತ್ತೆ. ಯಾವುದೇ ಆ್ಯಪ್ ಡೇಟಾ ಈ ಫೋನ್‌ನಿಂದ ಹೊರಹೋಗುವುದಿಲ್ಲ.</string>

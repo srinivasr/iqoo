@@ -1,14 +1,11 @@
 {
-  "certs": [
-    "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
-  ],
-  "packages": [
-    "com.fake.sbi.kyc",
-    "com.trojan.anubis",
-    "com.banking.fake"
-  ],
-  "domains": [
-    "malicious-c2.example.com",
-    "185.220.101.1"
-  ]
+  "meta": {
+    "source": "none",
+    "provenance": "No vetted threat-intelligence feed is bundled with this build.",
+    "tested": false,
+    "note": "Add entries only from a source you can name and verify. Debug builds load demo entries from src/debug/assets/threats.json instead."
+  },
+  "certs": [],
+  "packages": [],
+  "domains": []
 }

@@ -1,0 +1,10 @@
+{
+  "meta": {
+    "source": "demo (debug build only)",
+    "provenance": "Hand-written placeholder values for exercising the code path. NOT threat intelligence.",
+    "tested": false
+  },
+  "certs": [],
+  "packages": ["com.fake.sbi.kyc"],
+  "domains": ["malicious-c2.example.com"]
+}

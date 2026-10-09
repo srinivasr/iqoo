@@ -13,7 +13,6 @@
         <item quantity="one">%d જોખમી ઍપનું ઇન્ટરનેટ બંધ છે</item>
         <item quantity="other">%d જોખમી ઍપ્સનું ઇન્ટરનેટ બંધ છે</item>
     </plurals>
-    <string name="explainer_fallback">%1$s એ ઍક્સેસિબિલિટી ઍક્સેસ ચાલુ કર્યો છે અને તે નોંધાયેલ ઍક્સેસિબિલિટી ટૂલ નથી. તે તમારી સ્ક્રીન વાંચી શકે છે. કૃપા કરીને તેની તપાસ કરો અને ભરોસો ન હોય તો દૂર કરો.</string>
 
     <string name="nav_home">હોમ</string>
     <string name="nav_activity">પ્રવૃત્તિ</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">જાણીતા જોખમ સાથે મેળ ખાય છે</string>
     <string name="ev_threat_detail">આ ઍપ સ્થાનિક જોખમ યાદીમાં છે.</string>
-    <string name="ev_canary_title">નકલી ડેટા ફોનની બહાર મોકલ્યો</string>
-    <string name="ev_canary_detail">મૂકેલું DHRX નકલી મૂલ્ય આ ફોનમાંથી બહાર જતું જોવા મળ્યું.</string>
     <string name="ev_beacon_title">વારંવાર સર્વર કનેક્શન</string>
     <string name="ev_beacon_detail">એક જ અજાણ્યા સર્વરને નિયત સમયે શોધ્યું.</string>
     <string name="ev_a11y_title">ઍક્સેસિબિલિટી ઍક્સેસ ચાલુ</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">ઝડપી તપાસ</string>
     <string name="details_score_line">%1$s · જોખમ સ્કોર 100 માંથી %2$d</string>
     <string name="details_score_line_time">%1$s · જોખમ સ્કોર 100 માંથી %2$d · %3$s</string>
-    <string name="explain_trusted">તમે %1$s ને વિશ્વસનીય ચિહ્નિત કરી છે, તેથી DHRASHTAX તેને ચેતવણીમાં મૂકતું નથી.</string>
     <string name="explain_clean">%1$s માં કોઈ ચેતવણી સંકેત નથી (%2$s) અને અમે જેના પર નજર રાખીએ છીએ તેવો કોઈ સંવેદનશીલ ઍક્સેસ નથી.</string>
     <string name="explain_findings">%1$s: %2$s.</string>
     <string name="explain_separator">; </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">સમીક્ષાઓ, રોકેલા કનેક્શન અને ડિવાઇસ ફેરફારો થતાં જ અહીં દેખાશે.</string>
     <string name="act_reviewed">%1$s ની સમીક્ષા થઈ</string>
     <string name="act_score_detail">જોખમ સ્કોર %1$d · %2$s</string>
-    <string name="act_canary">%1$s એ નકલી ડેટા ફોનની બહાર મોકલ્યો</string>
     <string name="act_beacon">%1$s એ નિયત સમયે સર્વરનો સંપર્ક કર્યો</string>
     <string name="act_a11y">%1$s માટે ઍક્સેસિબિલિટી ઍક્સેસ ચાલુ થયો</string>
     <string name="act_sideload">%1$s Play Store બહારથી ઇન્સ્ટોલ થઈ</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">બેંકિંગ ઍપ દેખરેખ</string>
     <string name="set_bank_detail">બેંકિંગ ઍપ ખૂલે ત્યારે નોંધે છે, જેથી તે સમયે ચોરાયેલો ડેટા પકડી શકાય. Usage access જરૂરી.</string>
     <string name="set_allow">મંજૂરી આપો</string>
-    <string name="set_decoy_title">નકલી સંપર્ક</string>
-    <string name="set_decoy_detail">ફક્ત ડેટા ચોર જ બહાર મોકલે તેવો નકલી “DHRASHTA Canary” સંપર્ક ઉમેરે છે.</string>
     <string name="set_alerts_title">જોખમની ચેતવણીઓ</string>
     <string name="set_alerts_detail">જોખમી ઍપ મળે ત્યારે સૂચનાઓ.</string>
     <string name="set_on">ચાલુ</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">દૂર કરો</string>
     <string name="set_language">ઍપની ભાષા</string>
     <string name="set_change">બદલો</string>
-    <string name="set_ai">ઓન-ડિવાઇસ AI</string>
-    <string name="model_a11y">ઍક્સેસિબિલિટી વર્તન મૉડલ</string>
-    <string name="model_network">નેટવર્ક અસામાન્યતા મૉડલ</string>
-    <string name="model_llm">સમજૂતી મૉડલ (SmolLM2)</string>
-    <string name="model_installed">ઇન્સ્ટોલ છે</string>
-    <string name="model_missing">ઇન્સ્ટોલ નથી</string>
-    <string name="set_ai_note">મૉડલ ફાઇલ ન હોય તો તે સુવિધા ફક્ત નિયમો પર ચાલે છે.</string>
     <string name="set_about">વિશે</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">ઓન-ડિવાઇસ જોખમ ઓળખ. કોઈ ઍપ ડેટા આ ફોનની બહાર જતો નથી.</string>

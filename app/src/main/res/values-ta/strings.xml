@@ -13,7 +13,6 @@
         <item quantity="one">%d ஆபத்தான ஆப்பின் இணையம் நிறுத்தப்பட்டுள்ளது</item>
         <item quantity="other">%d ஆபத்தான ஆப்ஸின் இணையம் நிறுத்தப்பட்டுள்ளது</item>
     </plurals>
-    <string name="explainer_fallback">%1$s அணுகல்தன்மை அனுமதியை இயக்கியுள்ளது, இது பதிவுசெய்யப்பட்ட அணுகல்தன்மை கருவி அல்ல. இது உங்கள் திரையைப் படிக்கக்கூடும். இதைச் சரிபார்த்து, நம்பிக்கை இல்லையெனில் நீக்கவும்.</string>
 
     <string name="nav_home">முகப்பு</string>
     <string name="nav_activity">செயல்பாடு</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">அறியப்பட்ட அச்சுறுத்தலுடன் பொருந்துகிறது</string>
     <string name="ev_threat_detail">இந்த ஆப் உள்ளூர் அச்சுறுத்தல் பட்டியலில் உள்ளது.</string>
-    <string name="ev_canary_title">போலித் தரவை ஃபோனிலிருந்து வெளியே அனுப்பியது</string>
-    <string name="ev_canary_detail">வைக்கப்பட்ட DHRX போலி மதிப்பு இந்த ஃபோனிலிருந்து வெளியேறுவது கண்டறியப்பட்டது.</string>
     <string name="ev_beacon_title">மீண்டும் மீண்டும் சர்வர் இணைப்புகள்</string>
     <string name="ev_beacon_detail">ஒரே அறியப்படாத சர்வரை நிலையான கால இடைவெளியில் தேடியது.</string>
     <string name="ev_a11y_title">அணுகல்தன்மை அனுமதி இயக்கத்தில்</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">விரைவுச் சரிபார்ப்பு</string>
     <string name="details_score_line">%1$s · ஆபத்து மதிப்பெண் 100-இல் %2$d</string>
     <string name="details_score_line_time">%1$s · ஆபத்து மதிப்பெண் 100-இல் %2$d · %3$s</string>
-    <string name="explain_trusted">%1$s-ஐ நம்பகமானதாகக் குறித்துள்ளீர்கள், எனவே DHRASHTAX அதைக் கொடியிடாது.</string>
     <string name="explain_clean">%1$s-இல் எச்சரிக்கை அறிகுறிகள் இல்லை (%2$s), நாங்கள் கவனிக்கும் முக்கிய அனுமதிகளும் இல்லை.</string>
     <string name="explain_findings">%1$s: %2$s.</string>
     <string name="explain_separator">; </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">மதிப்பாய்வுகள், தடுக்கப்பட்ட இணைப்புகள், சாதன மாற்றங்கள் நிகழும்போது இங்கே தோன்றும்.</string>
     <string name="act_reviewed">%1$s மதிப்பாய்வு செய்யப்பட்டது</string>
     <string name="act_score_detail">ஆபத்து மதிப்பெண் %1$d · %2$s</string>
-    <string name="act_canary">%1$s போலித் தரவை ஃபோனிலிருந்து வெளியே அனுப்பியது</string>
     <string name="act_beacon">%1$s நிலையான கால இடைவெளியில் சர்வரைத் தொடர்பு கொண்டது</string>
     <string name="act_a11y">%1$s-க்கு அணுகல்தன்மை அனுமதி இயக்கப்பட்டது</string>
     <string name="act_sideload">%1$s Play Store-க்கு வெளியே நிறுவப்பட்டது</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">வங்கி ஆப் கண்காணிப்பு</string>
     <string name="set_bank_detail">வங்கி ஆப் திறக்கும்போது கவனிக்கிறது, அந்த நேரத்தில் திருடப்படும் தரவைக் கண்டறிய. Usage access தேவை.</string>
     <string name="set_allow">அனுமதி</string>
-    <string name="set_decoy_title">போலித் தொடர்பு</string>
-    <string name="set_decoy_detail">தரவுத் திருடன் மட்டுமே வெளியே அனுப்பும் ஒரு போலி “DHRASHTA Canary” தொடர்பைச் சேர்க்கிறது.</string>
     <string name="set_alerts_title">அச்சுறுத்தல் எச்சரிக்கைகள்</string>
     <string name="set_alerts_detail">ஆபத்தான ஆப் கண்டறியப்படும்போது அறிவிப்புகள்.</string>
     <string name="set_on">இயக்கத்தில்</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">நீக்கு</string>
     <string name="set_language">ஆப் மொழி</string>
     <string name="set_change">மாற்று</string>
-    <string name="set_ai">சாதனத்தில் AI</string>
-    <string name="model_a11y">அணுகல்தன்மை நடத்தை மாடல்</string>
-    <string name="model_network">நெட்வொர்க் முரண்பாடு மாடல்</string>
-    <string name="model_llm">விளக்க மாடல் (SmolLM2)</string>
-    <string name="model_installed">நிறுவப்பட்டது</string>
-    <string name="model_missing">நிறுவப்படவில்லை</string>
-    <string name="set_ai_note">மாடல் கோப்பு இல்லையெனில், அந்த அம்சம் விதிகளை மட்டுமே பயன்படுத்தும்.</string>
     <string name="set_about">பற்றி</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">சாதனத்திலேயே அச்சுறுத்தல் கண்டறிதல். எந்த ஆப் தரவும் இந்த ஃபோனை விட்டு வெளியேறாது.</string>

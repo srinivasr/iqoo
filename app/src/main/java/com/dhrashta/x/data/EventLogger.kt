@@ -7,6 +7,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicInteger
 
 object EventLogger {
     // Behavioural event types consumed by decision/CausalChains. Stored in events.signalId with weight 0,
@@ -15,8 +16,11 @@ object EventLogger {
     const val A11Y_ENABLED = "a11y_enabled"
     const val BEACON_UNKNOWN_HOST = "beacon_unknown_host"
     const val BANK_FOREGROUND = "bank_foreground"
-    const val CANARY_READ = "canary_read"
-    const val UPLOAD = "upload"
+    /**
+     * A planted decoy was seen in an outbound packet that entered our tunnel and was dropped there.
+     * It is a blocked send ATTEMPT, never proof that data left the phone.
+     */
+    const val CANARY_SEND_ATTEMPT = "canary_send_blocked"
     const val ADB_ENABLED = "adb_enabled"
     const val PRIVILEGE_CHANGE = "privilege_change"
     const val WORK_PROFILE_CREATED = "work_profile_created"
@@ -27,13 +31,42 @@ object EventLogger {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     @Volatile private var database: RoomDb? = null
+    private val writes = AtomicInteger()
+
+    /** Storage bounds: rows older than [RETENTION_MILLIS] or beyond the row caps are pruned. */
+    const val RETENTION_MILLIS = 7L * 24 * 60 * 60 * 1_000
+    private const val MAX_EVENTS = 20_000
+    private const val MAX_CONNECTIONS = 5_000
+    private const val MAX_RISK_SCORES = 5_000
+    private const val PRUNE_EVERY_WRITES = 500
 
     fun init(context: Context) {
         if (database == null) {
             synchronized(this) {
-                if (database == null) database = RoomDb.get(context)
+                if (database == null) {
+                    database = RoomDb.get(context)
+                    scope.launch { prune() }
+                }
             }
         }
+    }
+
+    /** Deletes old rows and caps table sizes so logs can never grow without bound. */
+    suspend fun prune() {
+        val db = database ?: return
+        val cutoff = System.currentTimeMillis() - RETENTION_MILLIS
+        runCatching {
+            db.eventDao().deleteOlderThan(cutoff)
+            db.eventDao().keepNewest(MAX_EVENTS)
+            db.connectionDao().deleteOlderThan(cutoff)
+            db.connectionDao().keepNewest(MAX_CONNECTIONS)
+            db.riskScoreDao().deleteOlderThan(cutoff)
+            db.riskScoreDao().keepNewest(MAX_RISK_SCORES)
+        }
+    }
+
+    private fun afterWrite() {
+        if (writes.incrementAndGet() % PRUNE_EVERY_WRITES == 0) scope.launch { prune() }
     }
 
     fun observeRiskScores(context: Context): Flow<List<RiskScore>> {
@@ -70,6 +103,7 @@ object EventLogger {
                     blocked = true,
                 ),
             )
+            afterWrite()
         }
     }
 
@@ -84,6 +118,7 @@ object EventLogger {
                     band = band,
                 ),
             )
+            afterWrite()
         }
     }
 
@@ -91,7 +126,11 @@ object EventLogger {
     suspend fun logEvent(pkg: String, type: String, ts: Long = System.currentTimeMillis()) {
         val db = database ?: return
         db.eventDao().insert(Event(timestamp = ts, pkg = pkg, signalId = type, weight = 0))
+        afterWrite()
     }
+
+    /** Earliest [type] event logged for [pkg], or null. Used to time a11y enables from their real moment. */
+    suspend fun firstEventTime(pkg: String, type: String): Long? = database?.eventDao()?.firstTime(pkg, type)
 
     /** Fire-and-forget variant of [logEvent] for callers outside a coroutine. */
     fun recordEvent(pkg: String, type: String, ts: Long = System.currentTimeMillis()) {
@@ -117,6 +156,7 @@ object EventLogger {
                     ),
                 )
             }
+            afterWrite()
         }
     }
 }

@@ -43,15 +43,21 @@ import com.dhrashta.x.ui.theme.ForestSoft
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 
-/** Live status of every sensor and permission the Settings tab shows. Model keys are string resource IDs. */
+/** Whether a sensor is running, switched off, or simply not something this build can see. */
+enum class CoverageState { On, Off, NotMonitored }
+
+/** One row of the "What is monitored" card. Everything here is read from live state. */
+data class CoverageItem(val title: String, val detail: String, val state: CoverageState)
+
+/** Live status of every sensor and permission the Settings tab shows. */
 data class SettingsStatus(
     val monitoring: Boolean,
     val vpnConsent: Boolean,
     val dnsMonitor: Boolean,
     val usageAccess: Boolean,
     val notifications: Boolean,
-    val contacts: Boolean,
-    val models: Map<Int, Boolean>,
+    val decoys: Boolean,
+    val coverage: List<CoverageItem>,
 )
 
 @Composable
@@ -65,7 +71,8 @@ fun SettingsScreen(
     onEnableDnsMonitor: () -> Unit,
     onUsageAccess: () -> Unit,
     onNotifications: () -> Unit,
-    onContacts: () -> Unit,
+    onDecoys: () -> Unit,
+    onSelfTest: () -> Unit,
     onAccessibilitySettings: () -> Unit,
     onChangeLanguage: () -> Unit,
     onUntrust: (String) -> Unit,
@@ -115,7 +122,7 @@ fun SettingsScreen(
                     HorizontalDivider(color = Line)
                     SettingRow(R.string.set_bank_title, R.string.set_bank_detail, status.usageAccess, R.string.set_allow, onUsageAccess)
                     HorizontalDivider(color = Line)
-                    SettingRow(R.string.set_decoy_title, R.string.set_decoy_detail, status.contacts, R.string.set_allow, onContacts)
+                    SettingRow(R.string.set_decoy_title, R.string.set_decoy_detail, status.decoys, R.string.set_turn_on, onDecoys, offAction = onDecoys)
                     HorizontalDivider(color = Line)
                     SettingRow(R.string.set_alerts_title, R.string.set_alerts_detail, status.notifications, R.string.set_allow, onNotifications)
                 }
@@ -160,24 +167,41 @@ fun SettingsScreen(
             }
 
             Spacer(Modifier.height(30.dp))
-            SectionTitle(stringResource(R.string.set_ai))
+            SectionTitle(stringResource(R.string.cov_title))
             Spacer(Modifier.height(12.dp))
             QuietCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    status.models.entries.forEachIndexed { index, (name, installed) ->
+                    status.coverage.forEachIndexed { index, item ->
                         if (index > 0) HorizontalDivider(color = Line)
                         Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Text(stringResource(name), style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
-                            StatusPill(stringResource(if (installed) R.string.model_installed else R.string.model_missing), installed)
+                            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                                Text(item.title, style = MaterialTheme.typography.titleMedium)
+                                Text(item.detail, color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
+                            }
+                            StatusPill(
+                                stringResource(
+                                    when (item.state) {
+                                        CoverageState.On -> R.string.set_on
+                                        CoverageState.Off -> R.string.cov_off
+                                        CoverageState.NotMonitored -> R.string.cov_not_monitored
+                                    },
+                                ),
+                                item.state == CoverageState.On,
+                            )
                         }
                     }
                 }
             }
             Text(
-                stringResource(R.string.set_ai_note),
+                stringResource(R.string.set_selftest),
+                color = Forest,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.clickable(onClick = onSelfTest).padding(vertical = 14.dp),
+            )
+            Text(
+                stringResource(R.string.cov_note),
                 color = MutedInk,
                 style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 10.dp),
             )
 
             Spacer(Modifier.height(30.dp))
@@ -196,13 +220,31 @@ fun SettingsScreen(
 }
 
 @Composable
-private fun SettingRow(title: Int, detail: Int, on: Boolean, actionLabel: Int, onAction: (() -> Unit)?) {
+private fun SettingRow(
+    title: Int,
+    detail: Int,
+    on: Boolean,
+    actionLabel: Int,
+    onAction: (() -> Unit)?,
+    offAction: (() -> Unit)? = null,
+) {
     Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
             Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(detail), color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
         }
-        if (on || onAction == null) {
+        if (on && offAction != null) {
+            Column(horizontalAlignment = Alignment.End) {
+                StatusPill(stringResource(R.string.set_on), true)
+                Text(
+                    stringResource(R.string.set_turn_off),
+                    color = Forest,
+                    fontWeight = FontWeight.SemiBold,
+                    fontSize = 13.sp,
+                    modifier = Modifier.clickable(onClick = offAction).padding(top = 6.dp),
+                )
+            }
+        } else if (on || onAction == null) {
             StatusPill(stringResource(if (on) R.string.set_on else actionLabel), on)
         } else {
             Text(

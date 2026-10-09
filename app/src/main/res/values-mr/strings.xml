@@ -13,7 +13,6 @@
         <item quantity="one">%d धोकादायक ॲपचे इंटरनेट थांबवले आहे</item>
         <item quantity="other">%d धोकादायक ॲप्सचे इंटरनेट थांबवले आहे</item>
     </plurals>
-    <string name="explainer_fallback">%1$s ने ॲक्सेसिबिलिटी ॲक्सेस सुरू केला आहे आणि ते नोंदणीकृत ॲक्सेसिबिलिटी टूल नाही. ते तुमची स्क्रीन वाचू शकते. कृपया त्याची तपासणी करा आणि विश्वास नसल्यास काढून टाका.</string>
 
     <string name="nav_home">होम</string>
     <string name="nav_activity">हालचाली</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">ज्ञात धोक्याशी जुळते</string>
     <string name="ev_threat_detail">हे ॲप स्थानिक धोका यादीत आहे.</string>
-    <string name="ev_canary_title">बनावट डेटा फोनबाहेर पाठवला</string>
-    <string name="ev_canary_detail">ठेवलेले DHRX बनावट मूल्य या फोनमधून बाहेर जाताना दिसले.</string>
     <string name="ev_beacon_title">वारंवार सर्व्हर कनेक्शन</string>
     <string name="ev_beacon_detail">एकाच अज्ञात सर्व्हरचा ठरावीक वेळाने शोध घेतला.</string>
     <string name="ev_a11y_title">ॲक्सेसिबिलिटी ॲक्सेस सुरू</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">जलद तपासणी</string>
     <string name="details_score_line">%1$s · धोका गुण 100 पैकी %2$d</string>
     <string name="details_score_line_time">%1$s · धोका गुण 100 पैकी %2$d · %3$s</string>
-    <string name="explain_trusted">तुम्ही %1$s ला विश्वासू म्हणून चिन्हांकित केले आहे, त्यामुळे DHRASHTAX त्याबद्दल इशारा देत नाही.</string>
     <string name="explain_clean">%1$s मध्ये कोणतेही धोक्याचे संकेत नाहीत (%2$s) आणि आम्ही लक्ष ठेवतो असा कोणताही संवेदनशील ॲक्सेस नाही.</string>
     <string name="explain_findings">%1$s: %2$s.</string>
     <string name="explain_separator">; </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">पुनरावलोकने, रोखलेले कनेक्शन आणि डिव्हाइसमधील बदल घडताच इथे दिसतील.</string>
     <string name="act_reviewed">%1$s चे पुनरावलोकन झाले</string>
     <string name="act_score_detail">धोका गुण %1$d · %2$s</string>
-    <string name="act_canary">%1$s ने बनावट डेटा फोनबाहेर पाठवला</string>
     <string name="act_beacon">%1$s ने ठरावीक वेळाने सर्व्हरशी संपर्क केला</string>
     <string name="act_a11y">%1$s साठी ॲक्सेसिबिलिटी ॲक्सेस सुरू झाला</string>
     <string name="act_sideload">%1$s Play Store बाहेरून इंस्टॉल झाले</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">बँकिंग ॲप निरीक्षण</string>
     <string name="set_bank_detail">बँकिंग ॲप उघडताच लक्षात घेते, जेणेकरून त्या वेळी चोरलेला डेटा पकडता येईल. Usage access आवश्यक.</string>
     <string name="set_allow">परवानगी द्या</string>
-    <string name="set_decoy_title">बनावट संपर्क</string>
-    <string name="set_decoy_detail">फक्त डेटा चोरच बाहेर पाठवेल असा बनावट “DHRASHTA Canary” संपर्क जोडते.</string>
     <string name="set_alerts_title">धोक्याच्या सूचना</string>
     <string name="set_alerts_detail">धोकादायक ॲप आढळल्यावर सूचना.</string>
     <string name="set_on">सुरू</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">काढा</string>
     <string name="set_language">ॲपची भाषा</string>
     <string name="set_change">बदला</string>
-    <string name="set_ai">ऑन-डिव्हाइस AI</string>
-    <string name="model_a11y">ॲक्सेसिबिलिटी वर्तन मॉडेल</string>
-    <string name="model_network">नेटवर्क असामान्यता मॉडेल</string>
-    <string name="model_llm">स्पष्टीकरण मॉडेल (SmolLM2)</string>
-    <string name="model_installed">इंस्टॉल आहे</string>
-    <string name="model_missing">इंस्टॉल नाही</string>
-    <string name="set_ai_note">मॉडेल फाइल नसल्यास ते वैशिष्ट्य फक्त नियमांवर चालते.</string>
     <string name="set_about">माहिती</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">ऑन-डिव्हाइस धोका ओळख. कोणताही ॲप डेटा या फोनबाहेर जात नाही.</string>

@@ -13,7 +13,6 @@
         <item quantity="one">%d خطرناک ایپ کا انٹرنیٹ روکا گیا ہے</item>
         <item quantity="other">%d خطرناک ایپس کا انٹرنیٹ روکا گیا ہے</item>
     </plurals>
-    <string name="explainer_fallback">%1$s نے رسائی پذیری کی اجازت آن کی ہے اور یہ رجسٹرڈ رسائی پذیری ٹول نہیں ہے۔ یہ آپ کی اسکرین پڑھ سکتی ہے۔ براہ کرم اس کی جانچ کریں اور بھروسا نہ ہو تو اسے ہٹا دیں۔</string>
 
     <string name="nav_home">ہوم</string>
     <string name="nav_activity">سرگرمی</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">معلوم خطرے سے ملتی ہے</string>
     <string name="ev_threat_detail">یہ ایپ مقامی خطرہ فہرست میں ہے۔</string>
-    <string name="ev_canary_title">جعلی ڈیٹا فون سے باہر بھیجا</string>
-    <string name="ev_canary_detail">رکھی گئی DHRX جعلی قدر اس فون سے باہر جاتی دیکھی گئی۔</string>
     <string name="ev_beacon_title">بار بار سرور کنکشن</string>
     <string name="ev_beacon_detail">ایک ہی نامعلوم سرور کو مقررہ وقفے پر تلاش کیا۔</string>
     <string name="ev_a11y_title">رسائی پذیری کی اجازت آن ہے</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">فوری جانچ</string>
     <string name="details_score_line">%1$s · خطرہ اسکور 100 میں سے %2$d</string>
     <string name="details_score_line_time">%1$s · خطرہ اسکور 100 میں سے %2$d · %3$s</string>
-    <string name="explain_trusted">آپ نے %1$s کو قابل اعتماد نشان زد کیا ہے، اس لیے DHRASHTAX اس کے بارے میں خبردار نہیں کرتا۔</string>
     <string name="explain_clean">%1$s میں کوئی انتباہی علامت نہیں (%2$s) اور کوئی حساس رسائی نہیں۔</string>
     <string name="explain_findings">%1$s: %2$s۔</string>
     <string name="explain_separator">؛ </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">جائزے، روکے گئے کنکشن اور آلے کی تبدیلیاں ہوتے ہی یہاں نظر آئیں گی۔</string>
     <string name="act_reviewed">%1$s کا جائزہ لیا گیا</string>
     <string name="act_score_detail">خطرہ اسکور %1$d · %2$s</string>
-    <string name="act_canary">%1$s نے جعلی ڈیٹا فون سے باہر بھیجا</string>
     <string name="act_beacon">%1$s نے مقررہ وقفے پر سرور سے رابطہ کیا</string>
     <string name="act_a11y">%1$s کے لیے رسائی پذیری کی اجازت آن ہوئی</string>
     <string name="act_sideload">%1$s Play Store کے باہر سے انسٹال ہوئی</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">بینکنگ ایپ نگرانی</string>
     <string name="set_bank_detail">بینکنگ ایپ کھلتے ہی نوٹ کرتا ہے، تاکہ اس وقت چرایا گیا ڈیٹا پکڑا جا سکے۔ Usage access درکار ہے۔</string>
     <string name="set_allow">اجازت دیں</string>
-    <string name="set_decoy_title">جعلی رابطہ</string>
-    <string name="set_decoy_detail">ایک جعلی “DHRASHTA Canary” رابطہ شامل کرتا ہے، جسے صرف ڈیٹا چور ہی باہر بھیجے گا۔</string>
     <string name="set_alerts_title">خطرے کے انتباہات</string>
     <string name="set_alerts_detail">خطرناک ایپ ملنے پر اطلاعات۔</string>
     <string name="set_on">آن</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">ہٹائیں</string>
     <string name="set_language">ایپ کی زبان</string>
     <string name="set_change">بدلیں</string>
-    <string name="set_ai">آلے پر AI</string>
-    <string name="model_a11y">رسائی پذیری رویہ ماڈل</string>
-    <string name="model_network">نیٹ ورک بے قاعدگی ماڈل</string>
-    <string name="model_llm">وضاحتی ماڈل (SmolLM2)</string>
-    <string name="model_installed">انسٹال ہے</string>
-    <string name="model_missing">انسٹال نہیں</string>
-    <string name="set_ai_note">ماڈل فائل نہ ہو تو وہ خصوصیت صرف قواعد پر چلتی ہے۔</string>
     <string name="set_about">تعارف</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">آلے پر خطرے کی شناخت۔ کوئی بھی ایپ ڈیٹا اس فون سے باہر نہیں جاتا۔</string>

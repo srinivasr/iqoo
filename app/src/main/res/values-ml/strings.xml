@@ -13,7 +13,6 @@
         <item quantity="one">അപകടകരമായ %d ആപ്പിന്റെ ഇന്റർനെറ്റ് നിർത്തി</item>
         <item quantity="other">അപകടകരമായ %d ആപ്പുകളുടെ ഇന്റർനെറ്റ് നിർത്തി</item>
     </plurals>
-    <string name="explainer_fallback">%1$s ഉപയോഗസഹായി ആക്‌സസ് ഓണാക്കി, ഇത് രജിസ്റ്റർ ചെയ്ത ഉപയോഗസഹായി ടൂൾ അല്ല. ഇതിന് നിങ്ങളുടെ സ്‌ക്രീൻ വായിക്കാനാകും. ദയവായി ഇത് പരിശോധിക്കുക, വിശ്വാസമില്ലെങ്കിൽ നീക്കം ചെയ്യുക.</string>
 
     <string name="nav_home">ഹോം</string>
     <string name="nav_activity">പ്രവർത്തനം</string>
@@ -65,8 +64,6 @@
 
     <string name="ev_threat_title">അറിയപ്പെടുന്ന ഭീഷണിയുമായി പൊരുത്തം</string>
     <string name="ev_threat_detail">ഈ ആപ്പ് പ്രാദേശിക ഭീഷണി പട്ടികയിലുണ്ട്.</string>
-    <string name="ev_canary_title">വ്യാജ ഡാറ്റ ഫോണിന് പുറത്തേക്ക് അയച്ചു</string>
-    <string name="ev_canary_detail">സ്ഥാപിച്ച DHRX വ്യാജ മൂല്യം ഈ ഫോണിൽ നിന്ന് പുറത്തുപോകുന്നത് കണ്ടു.</string>
     <string name="ev_beacon_title">ആവർത്തിച്ചുള്ള സെർവർ കണക്ഷനുകൾ</string>
     <string name="ev_beacon_detail">ഒരേ അജ്ഞാത സെർവർ നിശ്ചിത ഇടവേളകളിൽ തിരഞ്ഞു.</string>
     <string name="ev_a11y_title">ഉപയോഗസഹായി ആക്‌സസ് ഓണാണ്</string>
@@ -93,7 +90,6 @@
     <string name="details_quick_check">ദ്രുത പരിശോധന</string>
     <string name="details_score_line">%1$s · അപകട സ്കോർ 100-ൽ %2$d</string>
     <string name="details_score_line_time">%1$s · അപകട സ്കോർ 100-ൽ %2$d · %3$s</string>
-    <string name="explain_trusted">നിങ്ങൾ %1$s വിശ്വസനീയമെന്ന് അടയാളപ്പെടുത്തി, അതിനാൽ DHRASHTAX ഇതിനെക്കുറിച്ച് മുന്നറിയിപ്പ് നൽകില്ല.</string>
     <string name="explain_clean">%1$s-ൽ മുന്നറിയിപ്പ് അടയാളങ്ങളില്ല (%2$s), ഞങ്ങൾ ശ്രദ്ധിക്കുന്ന സെൻസിറ്റീവ് ആക്‌സസും ഇല്ല.</string>
     <string name="explain_findings">%1$s: %2$s.</string>
     <string name="explain_separator">; </string>
@@ -153,7 +149,6 @@
     <string name="activity_empty_detail">അവലോകനങ്ങൾ, തടഞ്ഞ കണക്ഷനുകൾ, ഉപകരണ മാറ്റങ്ങൾ എന്നിവ സംഭവിക്കുമ്പോൾ ഇവിടെ കാണാം.</string>
     <string name="act_reviewed">%1$s അവലോകനം ചെയ്തു</string>
     <string name="act_score_detail">അപകട സ്കോർ %1$d · %2$s</string>
-    <string name="act_canary">%1$s വ്യാജ ഡാറ്റ ഫോണിന് പുറത്തേക്ക് അയച്ചു</string>
     <string name="act_beacon">%1$s നിശ്ചിത ഇടവേളകളിൽ സെർവറുമായി ബന്ധപ്പെട്ടു</string>
     <string name="act_a11y">%1$s-ന് ഉപയോഗസഹായി ആക്‌സസ് ഓണാക്കി</string>
     <string name="act_sideload">%1$s Play Store-ന് പുറത്തുനിന്ന് ഇൻസ്റ്റാൾ ചെയ്തു</string>
@@ -181,8 +176,6 @@
     <string name="set_bank_title">ബാങ്കിംഗ് ആപ്പ് നിരീക്ഷണം</string>
     <string name="set_bank_detail">ബാങ്കിംഗ് ആപ്പ് തുറക്കുമ്പോൾ ശ്രദ്ധിക്കുന്നു, ആ സമയത്ത് മോഷ്ടിക്കുന്ന ഡാറ്റ പിടിക്കാൻ. Usage access വേണം.</string>
     <string name="set_allow">അനുവദിക്കുക</string>
-    <string name="set_decoy_title">വ്യാജ കോൺടാക്റ്റ്</string>
-    <string name="set_decoy_detail">ഡാറ്റ മോഷ്ടാവ് മാത്രം പുറത്തേക്ക് അയയ്‌ക്കുന്ന ഒരു വ്യാജ “DHRASHTA Canary” കോൺടാക്റ്റ് ചേർക്കുന്നു.</string>
     <string name="set_alerts_title">ഭീഷണി മുന്നറിയിപ്പുകൾ</string>
     <string name="set_alerts_detail">അപകടകരമായ ആപ്പ് കണ്ടെത്തുമ്പോൾ അറിയിപ്പുകൾ.</string>
     <string name="set_on">ഓൺ</string>
@@ -192,13 +185,6 @@
     <string name="set_remove">നീക്കുക</string>
     <string name="set_language">ആപ്പ് ഭാഷ</string>
     <string name="set_change">മാറ്റുക</string>
-    <string name="set_ai">ഉപകരണത്തിലെ AI</string>
-    <string name="model_a11y">ഉപയോഗസഹായി പെരുമാറ്റ മോഡൽ</string>
-    <string name="model_network">നെറ്റ്‌വർക്ക് അസാധാരണത്വ മോഡൽ</string>
-    <string name="model_llm">വിശദീകരണ മോഡൽ (SmolLM2)</string>
-    <string name="model_installed">ഇൻസ്റ്റാൾ ചെയ്തു</string>
-    <string name="model_missing">ഇൻസ്റ്റാൾ ചെയ്തിട്ടില്ല</string>
-    <string name="set_ai_note">മോഡൽ ഫയൽ ഇല്ലെങ്കിൽ, ആ സവിശേഷത നിയമങ്ങൾ മാത്രം ഉപയോഗിക്കും.</string>
     <string name="set_about">കുറിച്ച്</string>
     <string name="about_version">DHRASHTAX %1$s</string>
     <string name="about_text">ഉപകരണത്തിൽ തന്നെ ഭീഷണി കണ്ടെത്തൽ. ഒരു ആപ്പ് ഡാറ്റയും ഈ ഫോൺ വിട്ടുപോകുന്നില്ല.</string>
