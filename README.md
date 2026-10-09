@@ -137,16 +137,69 @@ Brand impersonation (`B6`) ignores official bank/government packages, Play-insta
 - **DNS monitor** (nothing paused): routes only the virtual resolver `10.0.0.53`. Each query gets its own relay ID (no cross-client mix-ups), IPv4 headers are validated, large answers are sent as IP fragments, TCP to the resolver gets an immediate RST, and IPv6 traffic is explicitly allowed to bypass. A query carrying a decoy is not forwarded.
 - **Containment** (one or more apps paused): a tunnel scoped with `addAllowedApplication` to those apps only. If no package can be added, no tunnel is created (an empty allow-list would capture every app).
 
-## Build
+## Verification & Test Harness
 
-Requirements: Android Studio (recent, with Android SDK Platform 36) or JDK 17 + Android SDK. The Gradle wrapper (Gradle 8.11.1, Android Gradle Plugin 8.10.1) is included.
+DHRASHTA-X includes an automated test and adversarial simulation harness:
 
 ```bash
-./gradlew test            # JVM unit tests
-./gradlew assembleDebug   # app/build/outputs/apk/debug/app-debug.apk
+# Run unit tests and JVM adversarial behavioral simulation suite
+./scripts/test-probe.sh test
+
+# Run live EDR stimulus probe against a connected Android device or emulator
+./scripts/test-probe.sh live
+
+# Run all verification steps
+./scripts/test-probe.sh all
 ```
 
-On Windows use `gradlew.bat`. `scripts/android-env.sh` is optional: it uses a project-local `.tooling/` folder only if one exists.
+The simulation suite (`AdversarialProbeSimulationTest.kt`) verifies end-to-end detection profiles against simulated trojans and benign baselines:
+- **TeaBot / SharkBot Profile**: Sideloaded APK + high-privilege Accessibility service + overlay permission + brand impersonation + CC-1 causal sequence -> confirms critical score (≥ 90) and network quarantine.
+- **Canary Exfiltration Probe**: Planted credential decoy (`DHRX-*`) transmission attempt -> confirms instant attribution and `HIGH_TAINT_MATCH` signal (+50).
+- **DNS Beaconing Profile**: Fresh accessibility service beaconing to unknown C2 within 5 minutes -> confirms `CC-2` causal bonus (+15).
+- **Negative Control**: Benign sideloaded accessibility utility (e.g. F-Droid tool) -> verifies score stays strictly below `CRITICAL` (< 90), preventing false-positive network isolation.
+
+## Build & Environment
+
+### Standard Build (JDK 17 + Android SDK)
+
+```bash
+source scripts/android-env.sh   # Sets JAVA_HOME, ANDROID_HOME, and PATH (platform-tools, emulator)
+./gradlew check assembleDebug   # Runs lint, unit tests, and builds app/build/outputs/apk/debug/app-debug.apk
+./gradlew installDebug          # Installs debug build directly to connected device
+```
+
+### Nix Flake Environment
+
+A declarative `flake.nix` is provided for reproducible captures, ADB orchestration, and traffic analysis:
+
+```bash
+nix develop                     # Enters devShell with ADB, tshark, capinfos, curl, jq
+nix flake check                 # Evaluates flake derivations and app entrypoints
+```
+
+### Android Emulator on NixOS
+
+On NixOS, the Android SDK emulator requires native GL/X11 FHS libraries:
+
+```bash
+./scripts/run-emulator.sh Pixel_10a   # Builds ephemeral FHS wrapper and launches AVD
+```
+
+### Network Traffic Capture (PCAPdroid Pipeline)
+
+To collect full bi-directional traffic traces for model training or offline packet verification:
+
+```bash
+# Download and install PCAPdroid via ADB
+./scripts/pcapdroid-install.sh
+# Alternatively via Nix:
+nix run .#install
+
+# Run a 30-minute timed capture session (saves verified .pcap to captures/)
+./scripts/pcapdroid-record.sh 30
+# Alternatively via Nix:
+nix run .#record -- 30
+```
 
 ## Project structure
 
@@ -165,10 +218,14 @@ iqoo/
 │       ├── sensing/          # Accessibility, package, posture, usage, profile watchers
 │       └── ui/               # Compose screens
 ├── app/src/debug/assets/     # Labelled demo threat list (debug builds only)
+├── app/src/test/java/        # JVM unit tests & adversarial simulation harness
 ├── dhrashta-x-v3/            # Model source package (training scripts, schema, test vectors)
-└── docs/assets/              # Screenshots and demo video
+├── docs/assets/              # Screenshots and demo video
+├── flake.nix                 # Nix environment definition (ADB, tshark, capture tools)
+└── scripts/                  # Environment, emulator, test probe, and PCAPdroid tooling
 ```
 
 ## License
 
 Copyright © 2026 the DHRASHTA-X authors. All rights reserved; see [LICENSE](LICENSE).
+

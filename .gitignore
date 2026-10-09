@@ -10,13 +10,17 @@ captures/
 DHRASHTA-X.pdf
 *.apk
 d79078f2-7d3d-40ad-a25a-2c6b36ac805a.png
+.direnv/
 
 # Local working folders (never commit)
 .claude_tmp/
 _to_delete/
 _backup_before_fixes/
+docs/deck/
 
 # Training artefacts: pickles and model dumps stay out of the public repo
 *.pkl
 *.bundle
 *.tgz
+
+PROJECT_CONTEXT.md
