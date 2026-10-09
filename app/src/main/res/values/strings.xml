@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name" translatable="false">DHRASHTAX</string>
+    <string name="theme_title">Appearance</string>
+    <string name="theme_dark">Dark</string>
+    <string name="theme_light">Light</string>
 
     <!-- Notification channels and notifications -->
     <string name="monitor_channel_name">Accessibility threat monitoring</string>

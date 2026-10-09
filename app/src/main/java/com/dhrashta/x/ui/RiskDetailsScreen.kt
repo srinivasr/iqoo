@@ -55,6 +55,7 @@ import com.dhrashta.x.ui.theme.DangerSoft
 import com.dhrashta.x.ui.theme.Forest
 import com.dhrashta.x.ui.theme.ForestSoft
 import com.dhrashta.x.ui.theme.Ink
+import com.dhrashta.x.ui.theme.Info
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 
@@ -125,7 +126,7 @@ fun RiskDetailsScreen(
                 }
                 risk.evidence.forEachIndexed { index, evidence ->
                     if (index > 0) HorizontalDivider(color = Line)
-                    EvidenceItem(evidence.title, evidence.detail, if (evidence.weight >= 20) Danger else if (evidence.weight >= 10) Amber else Forest)
+                    EvidenceItem(evidence.title, evidence.detail, if (evidence.weight >= 20) Danger else if (evidence.weight >= 10) Amber else Info)
                 }
             }
         }
@@ -212,7 +213,7 @@ private fun VerdictBanner(risk: AppRisk) {
         horizontalArrangement = Arrangement.spacedBy(11.dp),
     ) {
         Box(Modifier.size(22.dp).background(fg, CircleShape), contentAlignment = Alignment.Center) {
-            Text(if (risk.level >= RiskLevel.Review && !risk.trusted) "!" else "✓", color = Color.White, fontWeight = FontWeight.Bold)
+            Text(if (risk.level >= RiskLevel.Review && !risk.trusted) "!" else "✓", color = Canvas, fontWeight = FontWeight.Bold)
         }
         Text(text, color = fg, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
         Text("${risk.score}", color = fg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)

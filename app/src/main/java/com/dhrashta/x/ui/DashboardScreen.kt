@@ -1,12 +1,14 @@
 package com.dhrashta.x.ui
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -14,6 +16,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -41,10 +44,12 @@ import android.content.res.Resources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dhrashta.x.R
@@ -53,6 +58,8 @@ import com.dhrashta.x.ui.components.RiskBadge
 import com.dhrashta.x.ui.components.ScreenPadding
 import com.dhrashta.x.ui.components.SectionTitle
 import com.dhrashta.x.ui.theme.Amber
+import com.dhrashta.x.ui.theme.Accent
+import com.dhrashta.x.ui.theme.AccentSoft
 import com.dhrashta.x.ui.theme.Canvas as CanvasColor
 import com.dhrashta.x.ui.theme.Danger
 import com.dhrashta.x.ui.theme.Forest
@@ -87,39 +94,51 @@ fun DashboardScreen(
             item {
                 Spacer(Modifier.height(20.dp))
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Image(painterResource(R.drawable.ic_shield), contentDescription = null, modifier = Modifier.size(29.dp))
                     Text(
                         stringResource(R.string.app_name),
                         fontSize = 17.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 0.4.sp,
-                        modifier = Modifier.weight(1f),
+                        color = Ink,
+                        modifier = Modifier.weight(1f).padding(start = 10.dp),
                     )
                     Box(Modifier.size(44.dp).clickable(onClick = onSettings), contentAlignment = Alignment.Center) {
                         LineIcon(LineIconType.Settings, Modifier.size(23.dp))
                     }
                 }
                 Spacer(Modifier.height(26.dp))
-                Text(stringResource(R.string.home_title), style = MaterialTheme.typography.headlineMedium)
+                Text(stringResource(R.string.home_title), color = Ink, style = MaterialTheme.typography.headlineMedium)
                 Spacer(Modifier.height(14.dp))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(9.dp)) {
-                    Box(Modifier.size(8.dp).background(if (monitoring) Forest else Amber, CircleShape))
-                    Text(
-                        stringResource(if (monitoring) R.string.home_monitoring_active else R.string.home_monitoring_starting),
-                        color = if (monitoring) Forest else Amber,
-                        style = MaterialTheme.typography.titleMedium,
-                    )
+                QuietCard(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(horizontal = 18.dp, vertical = 17.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                            Box(Modifier.size(9.dp).background(if (monitoring) Forest else Amber, CircleShape))
+                            Text(
+                                stringResource(if (monitoring) R.string.home_monitoring_active else R.string.home_monitoring_starting),
+                                color = if (monitoring) Forest else Amber,
+                                style = MaterialTheme.typography.titleMedium,
+                            )
+                        }
+                        Text(
+                            statusMessage,
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 7.dp),
+                        )
+                    }
                 }
-                Text(
-                    statusMessage,
-                    color = MutedInk,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 6.dp),
-                )
-                Spacer(Modifier.height(24.dp))
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MetricCard(apps?.count { !it.app.isSystem }?.toString() ?: "–", stringResource(R.string.metric_apps_checked), Modifier.weight(1f))
-                    MetricCard(if (apps == null) "–" else attention.size.toString(), stringResource(R.string.metric_to_review), Modifier.weight(1f))
-                    MetricCard(if (apps == null) "–" else paused.toString(), stringResource(R.string.metric_paused), Modifier.weight(1f))
+                Spacer(Modifier.height(16.dp))
+                Row(
+                    Modifier.fillMaxWidth().background(Surface, RoundedCornerShape(14.dp))
+                        .padding(vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    MetricItem(apps?.count { !it.app.isSystem }?.toString() ?: "–", stringResource(R.string.metric_apps_checked), Ink, Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(40.dp).background(Line))
+                    MetricItem(if (apps == null) "–" else attention.size.toString(), stringResource(R.string.metric_to_review), if (attention.isEmpty()) Ink else Amber, Modifier.weight(1f))
+                    Box(Modifier.width(1.dp).height(40.dp).background(Line))
+                    MetricItem(if (apps == null) "–" else paused.toString(), stringResource(R.string.metric_paused), if (paused == 0) Ink else Info, Modifier.weight(1f))
                 }
                 Spacer(Modifier.height(34.dp))
                 SectionTitle(stringResource(R.string.home_needs_attention))
@@ -152,7 +171,7 @@ fun DashboardScreen(
                     if (recent.isNotEmpty()) {
                         Text(
                             stringResource(R.string.home_see_all),
-                            color = Forest,
+                            color = Accent,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clickable(onClick = onActivity).padding(8.dp),
                         )
@@ -175,7 +194,7 @@ fun DashboardScreen(
             }
             items(recent.take(3), key = { "recent-${it.key}" }) { item ->
                 ActivityRow(item, labels, onOpenApp)
-                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(color = Line)
             }
             item {
                 Spacer(Modifier.height(24.dp))
@@ -194,7 +213,7 @@ fun DashboardScreen(
                         selected = showSystem,
                         onClick = { showSystem = !showSystem },
                         label = { Text(stringResource(R.string.home_show_system)) },
-                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = ForestSoft, selectedLabelColor = Forest),
+                        colors = FilterChipDefaults.filterChipColors(selectedContainerColor = AccentSoft, selectedLabelColor = Accent),
                     )
                 }
             }
@@ -296,19 +315,17 @@ fun sourceText(res: Resources, app: InstalledApp): String = when {
 fun LoadingCard(text: String) {
     QuietCard(Modifier.fillMaxWidth()) {
         Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            CircularProgressIndicator(Modifier.size(20.dp), color = Forest, strokeWidth = 2.dp)
+            CircularProgressIndicator(Modifier.size(20.dp), color = Accent, strokeWidth = 2.dp)
             Text(text, color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(start = 12.dp))
         }
     }
 }
 
 @Composable
-private fun MetricCard(value: String, label: String, modifier: Modifier = Modifier) {
-    QuietCard(modifier) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 14.dp)) {
-            Text(value, fontSize = 24.sp, lineHeight = 28.sp, fontWeight = FontWeight.Bold)
-            Text(label, color = MutedInk, style = MaterialTheme.typography.bodyMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-        }
+private fun MetricItem(value: String, label: String, valueColor: Color, modifier: Modifier = Modifier) {
+    Column(modifier.padding(horizontal = 8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value, color = valueColor, fontSize = 24.sp, lineHeight = 29.sp, fontWeight = FontWeight.Bold)
+        Text(label, color = MutedInk, fontSize = 12.sp, lineHeight = 16.sp, textAlign = TextAlign.Center, maxLines = 2)
     }
 }
 
@@ -316,25 +333,26 @@ enum class BottomDestination { Home, Activity, Settings }
 
 @Composable
 fun BottomNavigation(active: BottomDestination, onHome: () -> Unit, onActivity: () -> Unit, onSettings: () -> Unit) {
-    Row(
-        Modifier.fillMaxWidth().background(Surface).padding(top = 9.dp).navigationBarsPadding(),
-        horizontalArrangement = Arrangement.SpaceAround,
-    ) {
-        BottomItem(stringResource(R.string.nav_home), LineIconType.Home, active == BottomDestination.Home, onHome)
-        BottomItem(stringResource(R.string.nav_activity), LineIconType.Activity, active == BottomDestination.Activity, onActivity)
-        BottomItem(stringResource(R.string.nav_settings), LineIconType.Settings, active == BottomDestination.Settings, onSettings)
+    Column(Modifier.fillMaxWidth().background(Surface)) {
+        HorizontalDivider(color = Line)
+        Row(Modifier.fillMaxWidth().navigationBarsPadding()) {
+            BottomItem(stringResource(R.string.nav_home), LineIconType.Home, active == BottomDestination.Home, onHome)
+            BottomItem(stringResource(R.string.nav_activity), LineIconType.Activity, active == BottomDestination.Activity, onActivity)
+            BottomItem(stringResource(R.string.nav_settings), LineIconType.Settings, active == BottomDestination.Settings, onSettings)
+        }
     }
 }
 
 @Composable
-private fun BottomItem(label: String, icon: LineIconType, selected: Boolean, onClick: () -> Unit) {
+private fun RowScope.BottomItem(label: String, icon: LineIconType, selected: Boolean, onClick: () -> Unit) {
     Column(
-        Modifier.clickable(onClick = onClick).padding(horizontal = 22.dp, vertical = 5.dp),
+        Modifier.weight(1f).clickable(onClick = onClick).padding(vertical = 7.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(3.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        LineIcon(icon, Modifier.size(22.dp), if (selected) Forest else MutedInk)
-        Text(label, fontSize = 11.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = if (selected) Forest else MutedInk)
+        Box(Modifier.width(22.dp).height(2.dp).background(if (selected) Accent else Color.Transparent, RoundedCornerShape(2.dp)))
+        LineIcon(icon, Modifier.size(22.dp), if (selected) Accent else MutedInk)
+        Text(label, fontSize = 11.sp, fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal, color = if (selected) Accent else MutedInk)
     }
 }
 

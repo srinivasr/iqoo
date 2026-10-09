@@ -24,7 +24,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dhrashta.x.BuildConfig
@@ -37,11 +41,16 @@ import com.dhrashta.x.ui.components.ScreenPadding
 import com.dhrashta.x.ui.components.SectionTitle
 import com.dhrashta.x.ui.theme.Amber
 import com.dhrashta.x.ui.theme.AmberSoft
+import com.dhrashta.x.ui.theme.Accent
+import com.dhrashta.x.ui.theme.AccentSoft
+import com.dhrashta.x.ui.theme.AppThemeMode
 import com.dhrashta.x.ui.theme.Canvas
 import com.dhrashta.x.ui.theme.Forest
 import com.dhrashta.x.ui.theme.ForestSoft
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
+import com.dhrashta.x.ui.theme.Ink
+import com.dhrashta.x.ui.theme.Surface
 
 /** Whether a sensor is running, switched off, or simply not something this build can see. */
 enum class CoverageState { On, Off, NotMonitored }
@@ -65,6 +74,8 @@ fun SettingsScreen(
     status: SettingsStatus,
     trustedApps: List<InstalledApp>,
     language: AppLanguage.Option,
+    themeMode: AppThemeMode,
+    onThemeChange: (AppThemeMode) -> Unit,
     onHome: () -> Unit,
     onActivity: () -> Unit,
     onScanNow: () -> Unit,
@@ -93,6 +104,29 @@ fun SettingsScreen(
             PrimaryAction(stringResource(R.string.action_scan_now), onScanNow)
 
             Spacer(Modifier.height(30.dp))
+            SectionTitle(stringResource(R.string.theme_title))
+            Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth().background(Surface, RoundedCornerShape(12.dp))
+                    .padding(4.dp).selectableGroup(),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                AppThemeMode.entries.forEach { mode ->
+                    val selected = mode == themeMode
+                    Text(
+                        stringResource(if (mode == AppThemeMode.Dark) R.string.theme_dark else R.string.theme_light),
+                        modifier = Modifier.weight(1f)
+                            .background(if (selected) AccentSoft else Surface, RoundedCornerShape(9.dp))
+                            .selectable(selected = selected, role = Role.RadioButton) { onThemeChange(mode) }
+                            .padding(vertical = 12.dp),
+                        color = if (selected) Accent else Ink,
+                        textAlign = TextAlign.Center,
+                        style = MaterialTheme.typography.titleMedium,
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(30.dp))
             SectionTitle(stringResource(R.string.set_language))
             Spacer(Modifier.height(12.dp))
             QuietCard(Modifier.fillMaxWidth().clickable(onClick = onChangeLanguage)) {
@@ -103,11 +137,11 @@ fun SettingsScreen(
                     }
                     Text(
                         stringResource(R.string.set_change),
-                        color = Forest,
+                        color = Accent,
                         fontWeight = FontWeight.SemiBold,
                         modifier = Modifier.padding(end = 6.dp),
                     )
-                    Chevron(color = Forest)
+                    Chevron(color = Accent)
                 }
             }
 
@@ -129,7 +163,7 @@ fun SettingsScreen(
             }
             Text(
                 stringResource(R.string.set_open_a11y),
-                color = Forest,
+                color = Accent,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clickable(onClick = onAccessibilitySettings).padding(vertical = 14.dp),
             )
@@ -157,7 +191,7 @@ fun SettingsScreen(
                             Text(app.label, style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f).padding(horizontal = 12.dp))
                             Text(
                                 stringResource(R.string.set_remove),
-                                color = Forest,
+                                color = Accent,
                                 fontWeight = FontWeight.SemiBold,
                                 modifier = Modifier.clickable { onUntrust(app.pkg) }.padding(8.dp),
                             )
@@ -194,7 +228,7 @@ fun SettingsScreen(
             }
             Text(
                 stringResource(R.string.set_selftest),
-                color = Forest,
+                color = Accent,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.clickable(onClick = onSelfTest).padding(vertical = 14.dp),
             )
@@ -238,7 +272,7 @@ private fun SettingRow(
                 StatusPill(stringResource(R.string.set_on), true)
                 Text(
                     stringResource(R.string.set_turn_off),
-                    color = Forest,
+                    color = Accent,
                     fontWeight = FontWeight.SemiBold,
                     fontSize = 13.sp,
                     modifier = Modifier.clickable(onClick = offAction).padding(top = 6.dp),
@@ -249,11 +283,11 @@ private fun SettingRow(
         } else {
             Text(
                 stringResource(actionLabel),
-                color = androidx.compose.ui.graphics.Color.White,
+                color = Canvas,
                 fontWeight = FontWeight.SemiBold,
                 fontSize = 13.sp,
                 modifier = Modifier
-                    .background(Forest, RoundedCornerShape(6.dp))
+                    .background(Accent, RoundedCornerShape(6.dp))
                     .clickable(onClick = onAction)
                     .padding(horizontal = 12.dp, vertical = 7.dp),
             )

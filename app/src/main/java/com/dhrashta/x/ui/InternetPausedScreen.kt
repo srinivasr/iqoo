@@ -34,6 +34,8 @@ import com.dhrashta.x.ui.components.ScreenPadding
 import com.dhrashta.x.ui.components.SecondaryAction
 import com.dhrashta.x.ui.components.SectionTitle
 import com.dhrashta.x.ui.theme.Canvas
+import com.dhrashta.x.ui.theme.Accent
+import com.dhrashta.x.ui.theme.AccentSoft
 import com.dhrashta.x.ui.theme.Forest
 import com.dhrashta.x.ui.theme.ForestSoft
 import com.dhrashta.x.ui.theme.Info
@@ -74,7 +76,7 @@ fun InternetPausedScreen(
             horizontalArrangement = Arrangement.spacedBy(11.dp),
         ) {
             Box(Modifier.size(21.dp).background(Info, CircleShape), contentAlignment = Alignment.Center) {
-                Text("i", color = androidx.compose.ui.graphics.Color.White, fontWeight = FontWeight.Bold)
+                Text("i", color = Canvas, fontWeight = FontWeight.Bold)
             }
             Text(stringResource(R.string.paused_others), color = Info, fontWeight = FontWeight.SemiBold)
         }
@@ -105,7 +107,7 @@ fun InternetPausedScreen(
         Spacer(Modifier.height(12.dp))
         QuietCard(Modifier.fillMaxWidth()) {
             Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.size(9.dp).background(Forest, CircleShape))
+                Box(Modifier.size(9.dp).background(Info, CircleShape))
                 Column(Modifier.padding(start = 12.dp)) {
                     Text(
                         if (blockedCount == 0) {
@@ -131,8 +133,8 @@ fun InternetPausedScreen(
 @Composable
 private fun NextStep(number: String, text: String) {
     Row(Modifier.padding(vertical = 15.dp), verticalAlignment = Alignment.CenterVertically) {
-        Box(Modifier.size(25.dp).background(ForestSoft, CircleShape), contentAlignment = Alignment.Center) {
-            Text(number, color = Forest, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+        Box(Modifier.size(25.dp).background(AccentSoft, CircleShape), contentAlignment = Alignment.Center) {
+            Text(number, color = Accent, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
         }
         Text(text, style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(start = 12.dp))
     }

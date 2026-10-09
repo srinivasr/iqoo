@@ -50,6 +50,8 @@ import com.dhrashta.x.enforcement.NetworkPause
 import com.dhrashta.x.sensing.DhrashtaForegroundService
 import com.dhrashta.x.sensing.UsageWatcher
 import com.dhrashta.x.ui.theme.DhrashtaTheme
+import com.dhrashta.x.ui.theme.AppThemeMode
+import com.dhrashta.x.ui.theme.ThemePreference
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -58,6 +60,7 @@ import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
     private var destination by mutableStateOf<Screen>(Screen.Home)
+    private var themeMode by mutableStateOf(AppThemeMode.Dark)
     private var refreshTick by mutableIntStateOf(0)
     private var resumedOnce = false
     private var pendingVpnAction: (() -> Unit)? = null
@@ -89,6 +92,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        themeMode = ThemePreference.read(this)
         EventLogger.init(applicationContext)
         ContextCompat.startForegroundService(this, Intent(this, DhrashtaForegroundService::class.java))
         NetworkPause.startDnsMonitor(this)
@@ -103,7 +107,7 @@ class MainActivity : ComponentActivity() {
         // Target SDK 35+ draws edge-to-edge; pad content by the system bars so nothing sits under them.
         enableEdgeToEdge()
         setContent {
-            DhrashtaTheme {
+            DhrashtaTheme(themeMode) {
                 Box(Modifier.fillMaxSize().background(Canvas).safeDrawingPadding()) { AppContent() }
             }
         }
@@ -225,6 +229,11 @@ class MainActivity : ComponentActivity() {
                 status = status,
                 trustedApps = installed.orEmpty().filter { it.pkg in trusted },
                 language = language,
+                themeMode = themeMode,
+                onThemeChange = { mode ->
+                    ThemePreference.save(this, mode)
+                    themeMode = mode
+                },
                 onHome = { destination = Screen.Home },
                 onActivity = { destination = Screen.Activity },
                 onScanNow = ::scanNow,
