@@ -40,6 +40,8 @@ import com.dhrashta.x.decision.ThreatList
 import com.dhrashta.x.sensing.A11yInspector
 import com.dhrashta.x.ui.theme.Forest
 import com.dhrashta.x.ui.theme.ForestSoft
+import com.dhrashta.x.ui.theme.Accent
+import com.dhrashta.x.ui.theme.AccentSoft
 import com.dhrashta.x.ui.theme.Line
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -265,8 +267,8 @@ fun AppIcon(pkg: String, label: String, modifier: Modifier = Modifier) {
     if (bitmap != null) {
         Image(bitmap, contentDescription = null, modifier = modifier.clip(shape))
     } else {
-        Box(modifier.background(ForestSoft, shape).border(1.dp, Line, shape), contentAlignment = Alignment.Center) {
-            Text(label.take(1).uppercase(), color = Forest, fontWeight = FontWeight.Bold, fontSize = 17.sp)
+        Box(modifier.background(AccentSoft, shape), contentAlignment = Alignment.Center) {
+            Text(label.take(1).uppercase(), color = Accent, fontWeight = FontWeight.Bold, fontSize = 17.sp)
         }
     }
 }

@@ -287,4 +287,7 @@
     <string name="notif_live_text">ফোনে নেটওয়ার্ক মডেল স্কোর %1$s। যাচাই করতে বা ইন্টারনেট থামাতে DHRASHTA-X খুলুন।</string>
     <string name="notif_inspect_title">অ্যাপ ট্রাফিক দেখা হচ্ছে</string>
     <string name="notif_inspect_text">%1$dটি অ্যাপ লাইভ ট্রাফিক পরীক্ষায়</string>
+    <string name="theme_title">থিম</string>
+    <string name="theme_dark">গাঢ়</string>
+    <string name="theme_light">হালকা</string>
 </resources>

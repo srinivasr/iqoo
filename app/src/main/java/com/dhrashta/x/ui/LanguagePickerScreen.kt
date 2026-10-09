@@ -34,6 +34,8 @@ import com.dhrashta.x.ui.components.ScreenPadding
 import com.dhrashta.x.ui.theme.Canvas
 import com.dhrashta.x.ui.theme.Forest
 import com.dhrashta.x.ui.theme.ForestSoft
+import com.dhrashta.x.ui.theme.Accent
+import com.dhrashta.x.ui.theme.AccentSoft
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 import com.dhrashta.x.ui.theme.Surface
@@ -58,7 +60,7 @@ fun LanguagePickerScreen(
         }
         LazyColumn(Modifier.weight(1f).padding(horizontal = ScreenPadding)) {
             item {
-                Text(stringResource(R.string.app_name), color = Forest, fontSize = 15.sp, style = MaterialTheme.typography.titleMedium)
+                Text(stringResource(R.string.app_name), color = Accent, fontSize = 15.sp, style = MaterialTheme.typography.titleMedium)
                 Spacer(Modifier.height(10.dp))
                 Text(stringResource(R.string.lang_title), style = MaterialTheme.typography.headlineMedium)
                 Text(
@@ -86,8 +88,7 @@ private fun LanguageCard(option: AppLanguage.Option, selected: Boolean, onClick:
     Row(
         Modifier
             .fillMaxWidth()
-            .background(if (selected) ForestSoft else Surface, shape)
-            .border(if (selected) 2.dp else 1.dp, if (selected) Forest else Line, shape)
+            .background(if (selected) AccentSoft else Surface, shape)
             .clickable(onClick = onClick)
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -103,11 +104,11 @@ private fun LanguageCard(option: AppLanguage.Option, selected: Boolean, onClick:
             }
         }
         Box(
-            Modifier.size(24.dp).border(2.dp, if (selected) Forest else Line, CircleShape),
+            Modifier.size(24.dp).border(2.dp, if (selected) Accent else Line, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             if (selected) {
-                LineIcon(LineIconType.Check, Modifier.size(16.dp), Forest)
+                LineIcon(LineIconType.Check, Modifier.size(16.dp), Accent)
             }
         }
     }

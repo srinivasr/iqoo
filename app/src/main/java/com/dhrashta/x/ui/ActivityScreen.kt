@@ -22,6 +22,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -48,7 +49,10 @@ import com.dhrashta.x.ui.theme.Canvas
 import com.dhrashta.x.ui.theme.Danger
 import com.dhrashta.x.ui.theme.Forest
 import com.dhrashta.x.ui.theme.ForestSoft
+import com.dhrashta.x.ui.theme.Accent
+import com.dhrashta.x.ui.theme.AccentSoft
 import com.dhrashta.x.ui.theme.Info
+import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 
 enum class ActivityKind { Alert, Review, Network, Device }
@@ -205,8 +209,8 @@ fun ActivityScreen(
                             onClick = { filter = option },
                             label = { Text(stringResource(option.label)) },
                             colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = ForestSoft,
-                                selectedLabelColor = Forest,
+                                selectedContainerColor = AccentSoft,
+                                selectedLabelColor = Accent,
                             ),
                         )
                     }
@@ -229,7 +233,7 @@ fun ActivityScreen(
             }
             items(visible, key = { it.key }) { item ->
                 ActivityRow(item, labels, onOpenApp)
-                Spacer(Modifier.height(10.dp))
+                HorizontalDivider(color = Line)
             }
             item { Spacer(Modifier.height(14.dp)) }
         }
@@ -242,8 +246,11 @@ fun ActivityRow(item: ActivityItem, labels: Map<String, String>, onOpenApp: (Str
     val res = LocalContext.current.resources
     val pkg = item.pkg
     val clickable = pkg != null && pkg in labels
-    QuietCard(Modifier.fillMaxWidth().then(if (clickable) Modifier.clickable { onOpenApp(pkg!!) } else Modifier)) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth().then(if (clickable) Modifier.clickable { onOpenApp(pkg!!) } else Modifier)
+            .padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
             if (pkg != null && pkg in labels) {
                 AppIcon(pkg, labels.getValue(pkg), Modifier.size(38.dp))
             } else {
@@ -262,13 +269,13 @@ fun ActivityRow(item: ActivityItem, labels: Map<String, String>, onOpenApp: (Str
                 )
             }
             Box(Modifier.padding(start = 8.dp).size(8.dp).background(kindColor(item.kind), CircleShape))
-        }
     }
 }
 
+@Composable
 private fun kindColor(kind: ActivityKind): Color = when (kind) {
     ActivityKind.Alert -> Danger
     ActivityKind.Review -> Amber
     ActivityKind.Network -> Info
-    ActivityKind.Device -> Forest
+    ActivityKind.Device -> MutedInk
 }

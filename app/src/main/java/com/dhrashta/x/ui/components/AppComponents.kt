@@ -43,6 +43,9 @@ import com.dhrashta.x.ui.theme.Amber
 import com.dhrashta.x.ui.theme.AmberSoft
 import com.dhrashta.x.ui.theme.Danger
 import com.dhrashta.x.ui.theme.DangerSoft
+import com.dhrashta.x.ui.theme.Accent
+import com.dhrashta.x.ui.theme.Canvas as CanvasColor
+import com.dhrashta.x.ui.theme.Critical
 import com.dhrashta.x.ui.theme.Forest
 import com.dhrashta.x.ui.theme.ForestSoft
 import com.dhrashta.x.ui.theme.Info
@@ -59,8 +62,7 @@ val ScreenPadding = 20.dp
 fun QuietCard(modifier: Modifier = Modifier, content: @Composable () -> Unit) {
     Box(
         modifier = modifier
-            .background(Surface, RoundedCornerShape(SmallRadius))
-            .border(1.dp, Line, RoundedCornerShape(SmallRadius)),
+            .background(Surface, RoundedCornerShape(14.dp)),
     ) { content() }
 }
 
@@ -101,7 +103,7 @@ fun RiskBadge(level: RiskLevel, trusted: Boolean = false, paused: Boolean = fals
     val (textRes, fg, bg) = when {
         paused -> Triple(R.string.badge_paused, Info, InfoSoft)
         trusted -> Triple(R.string.badge_trusted, Forest, ForestSoft)
-        level == RiskLevel.Critical -> Triple(R.string.badge_critical, Color.White, Danger)
+        level == RiskLevel.Critical -> Triple(R.string.badge_critical, Color.White, Critical)
         level == RiskLevel.High -> Triple(R.string.badge_high, Danger, DangerSoft)
         level == RiskLevel.Review -> Triple(R.string.badge_review, Amber, AmberSoft)
         else -> Triple(R.string.badge_low, Forest, ForestSoft)
@@ -121,8 +123,8 @@ fun PrimaryAction(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     Button(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = Forest),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(containerColor = Accent, contentColor = CanvasColor),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 14.dp),
     ) { Text(text, fontWeight = FontWeight.SemiBold) }
 }
@@ -132,8 +134,8 @@ fun SecondaryAction(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     OutlinedButton(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(1.dp, Ink),
+        shape = RoundedCornerShape(12.dp),
+        border = BorderStroke(1.dp, Line),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Ink),
         contentPadding = androidx.compose.foundation.layout.PaddingValues(vertical = 14.dp),
     ) { Text(text, fontWeight = FontWeight.SemiBold) }
