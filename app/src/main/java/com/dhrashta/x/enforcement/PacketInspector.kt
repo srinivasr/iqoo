@@ -17,14 +17,15 @@ class PacketInspector(context: Context) {
     private val connectivityManager = context.getSystemService(ConnectivityManager::class.java)
 
     fun getUid(buffer: ByteArray, length: Int): Int {
-        val packet = parse(buffer, length) ?: return Process.INVALID_UID
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q) return -1
+        val packet = parse(buffer, length) ?: return -1
         return runCatching {
             connectivityManager.getConnectionOwnerUid(
                 packet.protocol,
                 packet.source,
                 packet.destination,
             )
-        }.getOrDefault(Process.INVALID_UID)
+        }.getOrDefault(-1)
     }
 
     fun remoteAddress(buffer: ByteArray, length: Int): String =
