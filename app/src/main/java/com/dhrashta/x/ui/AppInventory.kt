@@ -30,7 +30,9 @@ import androidx.core.graphics.drawable.toBitmap
 import com.dhrashta.x.R
 import com.dhrashta.x.data.Event
 import com.dhrashta.x.data.EventLogger
+import com.dhrashta.x.data.LiveScore
 import com.dhrashta.x.data.RiskScore
+import com.dhrashta.x.data.StaticVerdict
 import com.dhrashta.x.decision.BrandHeuristic
 import com.dhrashta.x.decision.Signal
 import com.dhrashta.x.decision.SignalCatalogue
@@ -80,9 +82,13 @@ data class AppRisk(
     val lastReviewed: Long?,
     val paused: Boolean,
     val trusted: Boolean,
+    /** Its traffic is relayed and scored by the live network model right now. */
+    val inspecting: Boolean = false,
+    val live: LiveScore? = null,
 )
 
 private const val PLAY_STORE = "com.android.vending"
+private const val LIVE_EVIDENCE_MILLIS = 10 * 60_000L
 
 /** Reads every installed app with the facts the UI and quick check need. Call off the main thread. */
 suspend fun loadInstalledApps(context: Context): List<InstalledApp> = withContext(Dispatchers.IO) {
@@ -147,7 +153,7 @@ private val SIGNALS_BY_ID = listOf(
     SignalCatalogue.A1, SignalCatalogue.A2, SignalCatalogue.A3, SignalCatalogue.A4, SignalCatalogue.A5,
     SignalCatalogue.A6, SignalCatalogue.B1, SignalCatalogue.B4, SignalCatalogue.B5, SignalCatalogue.B6,
     SignalCatalogue.C1, SignalCatalogue.C5, SignalCatalogue.D1, SignalCatalogue.D2, SignalCatalogue.E4,
-    SignalCatalogue.E5, SignalCatalogue.HIGH_TAINT_MATCH, SignalCatalogue.N1, SignalCatalogue.N3,
+    SignalCatalogue.E5, SignalCatalogue.S0_HIGH, SignalCatalogue.S0_MEDIUM, SignalCatalogue.HIGH_TAINT_MATCH, SignalCatalogue.N1, SignalCatalogue.N3,
 ).associateBy { it.id }
 
 /**
@@ -163,6 +169,11 @@ fun assessApps(
     events: List<Event>,
     pausedUids: Set<Int>,
     trusted: Set<String>,
+    staticVerdicts: Map<String, StaticVerdict> = emptyMap(),
+    inspectingUids: Set<Int> = emptySet(),
+    liveScores: Map<String, LiveScore> = emptyMap(),
+    liveThreshold: Float = 1f,
+    now: Long = System.currentTimeMillis(),
 ): List<AppRisk> {
     val scoreByPkg = latestScores.associateBy { it.pkg }
     val eventsByPkg = events.groupBy { it.pkg }
@@ -184,6 +195,24 @@ fun assessApps(
             if (app.readsSms) add(ev(R.string.ev_sms_title, R.string.ev_sms_detail, 10))
             if (app.requestsOverlay) add(ev(R.string.ev_overlay_title, R.string.ev_overlay_detail, 10))
             if (app.installsPackages) add(ev(R.string.ev_install_title, R.string.ev_install_detail, 5))
+            liveScores[app.pkg]?.takeIf { it.lastAlertAt != null && now - it.lastAlertAt < LIVE_EVIDENCE_MILLIS }?.let { live ->
+                add(
+                    evs(
+                        R.string.ev_live_title,
+                        res.getString(R.string.ev_live_detail, "%.2f".format(live.maxProbability), "%.2f".format(liveThreshold), live.activeWindows),
+                        SignalCatalogue.E4.weight,
+                    ),
+                )
+            }
+            staticVerdicts[app.pkg]?.takeIf { it.level != StaticVerdict.Level.LOW }?.let { v ->
+                val rules = if (v.rules.isEmpty()) {
+                    res.getString(R.string.ev_static_rules_none)
+                } else {
+                    res.getString(R.string.ev_static_rules, v.rules.take(4).joinToString(", ") { it.removePrefix("MODERN_") })
+                }
+                val weight = if (v.level == StaticVerdict.Level.HIGH) SignalCatalogue.S0_HIGH.weight else SignalCatalogue.S0_MEDIUM.weight
+                add(evs(R.string.ev_static_title, res.getString(R.string.ev_static_detail, "%.2f".format(v.final), "%.2f".format(v.base), "%.2f".format(v.boost), rules), weight))
+            }
         }
         val engineScore = scoreByPkg[app.pkg]
         val engineSignals = appEvents.filter { it.weight != 0 }.mapNotNull { SIGNALS_BY_ID[it.signalId] }.distinct()
@@ -202,6 +231,8 @@ fun assessApps(
             lastReviewed = engineScore?.timestamp,
             paused = app.uid in pausedUids,
             trusted = isTrusted,
+            inspecting = app.uid in inspectingUids,
+            live = liveScores[app.pkg],
         )
     }
 }

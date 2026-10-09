@@ -1,0 +1,37 @@
+{
+ "model_file": "network_live_gemm_fp16.onnx",
+ "input_name": "input_0",
+ "window_seconds": 10,
+ "sequence_length": 10,
+ "features": [
+  "bytes_up",
+  "bytes_down",
+  "pkts_up",
+  "pkts_down",
+  "up_down_byte_ratio",
+  "mean_pkt_size",
+  "unique_dst_ips",
+  "unique_dst_ports",
+  "iat_mean",
+  "iat_std",
+  "tcp_syn_count",
+  "udp_pkt_frac"
+ ],
+ "flatten_order": "window-major, oldest first: index = window*12 + feature",
+ "preprocessing": "x = sign(v)*ln(1+|v|)  (signed log1p, NO scaler)",
+ "batch": 2,
+ "batch_note": "Hummingbird GEMM squeezes a size-1 batch; feed 2 identical rows and read row 0.",
+ "output_index": 1,
+ "prob_column": 1,
+ "output_is_probability": true,
+ "threshold": 0.987,
+ "threshold_note": "Probability at ~1% FPR on benign Mischief windows (in-sample).",
+ "model": "LightGBM compiled to tensor ops via Hummingbird GEMM, FP16; NNAPI/NPU-capable (Gemm/MatMul, no TreeEnsemble op)",
+ "evaluation": {
+  "dataset": "Android Mischief (8 RATs)",
+  "leave_one_rat_out_auc": 0.9668,
+  "leave_one_rat_out_recall": 0.468,
+  "in_sample_auc": 0.9582
+ },
+ "size_kb": 909
+}

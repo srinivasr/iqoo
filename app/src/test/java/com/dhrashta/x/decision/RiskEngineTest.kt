@@ -57,6 +57,17 @@ class RiskEngineTest {
     }
 
     @Test
+    fun staticScoreAddsS0SignalOnlyWhenScanned() {
+        val id = identity(installer = null)
+        fun run(score: Float?) = engine.evaluate(id, finding(), Posture(false, false, 1), null, null, false, ThreatList.empty(), staticScore = score)
+        assertTrue(run(0.8f).firedSignals.any { it.id == "S0_HIGH" })
+        assertTrue(run(0.3f).firedSignals.any { it.id == "S0_MEDIUM" })
+        assertFalse(run(0.1f).firedSignals.any { it.id.startsWith("S0") })
+        assertFalse(run(null).firedSignals.any { it.id.startsWith("S0") })
+        assertEquals(run(null).score + SignalCatalogue.S0_HIGH.weight, run(0.8f).score)
+    }
+
+    @Test
     fun accessibilityTimingUsesFirstEnableNotScanTime() {
         val installed = System.currentTimeMillis() - 60 * 60_000L // installed an hour ago
         val id = identity(installer = null).copy(firstInstallTime = installed)

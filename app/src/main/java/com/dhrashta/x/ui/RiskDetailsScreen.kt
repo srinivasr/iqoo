@@ -81,6 +81,8 @@ fun RiskDetailsScreen(
     onTrust: (Boolean) -> Unit,
     onListen: (String) -> Unit,
     onAnalyze: () -> Unit,
+    onInspect: (Boolean) -> Unit = {},
+    liveThreshold: Float = 1f,
 ) {
     BackHandler(onBack = onBack)
     var evidenceExpanded by rememberSaveable(risk.app.pkg) { mutableStateOf(false) }
@@ -154,6 +156,26 @@ fun RiskDetailsScreen(
             PrimaryAction(stringResource(R.string.action_paused_manage), onOpenPaused)
         } else if (!risk.app.isSystem) {
             PrimaryAction(stringResource(R.string.action_pause_internet), onPauseInternet)
+        }
+        if (!risk.paused && !risk.app.isSystem) {
+            Spacer(Modifier.height(10.dp))
+            SecondaryAction(
+                stringResource(if (risk.inspecting) R.string.action_inspect_stop else R.string.action_inspect_start),
+                onClick = { onInspect(!risk.inspecting) },
+            )
+            if (risk.inspecting) {
+                val live = risk.live
+                Text(
+                    if (live == null) {
+                        stringResource(R.string.live_status_waiting)
+                    } else {
+                        stringResource(R.string.live_status, "%.2f".format(live.lastProbability), "%.2f".format(liveThreshold), live.windowsScored)
+                    },
+                    color = MutedInk,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.padding(top = 6.dp),
+                )
+            }
         }
         Spacer(Modifier.height(10.dp))
         SecondaryAction(stringResource(R.string.action_review_permissions), onReviewPermissions)

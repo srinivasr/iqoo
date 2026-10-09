@@ -63,10 +63,12 @@ Settings → **What is monitored** shows this list live on the phone.
 |---|---|
 | Accessibility services | Watched continuously (enable events + every scan) |
 | DNS lookups | Watched when the DNS monitor is on (needs VPN consent); used for beacon timing |
-| Full network traffic | **Not captured.** Only DNS lookups and already-paused apps pass through the VPN |
+| Full network traffic | Relayed and measured **only for watched apps** (live inspection, below). Other apps never enter the VPN except for DNS monitoring |
 | Banking app in foreground | Needs Usage Access |
 | Decoy data | Opt-in. Plain-text DNS/paused-app traffic only; TLS payloads are never matched |
-| Network threat model | Loaded and verified on-device with a golden self-test (see below). Live traffic is **not** fed to it, because full-flow capture does not exist yet; it never invents a score |
+| Installed APKs (static) | Every user-installed app is scanned on-device by the S0 static model: at first start, on every new install, and on "Scan now" |
+| Live network model | Scores every watched app every 10 s from its real traffic; verified on-device by replaying 12 real Mischief sequences |
+| 13-class network model (v3) | Loaded and verified with its golden self-test only; it needs 82 CIC-style flow features that the relay does not compute, so it gets no live input |
 | Accessibility model | Not bundled. The loader only accepts a model with a `BENIGN` class |
 | Threat list | Release ships an empty list with provenance (`meta.source`). Debug builds load labelled demo values |
 
@@ -77,6 +79,29 @@ Bundled from `dhrashta-x-v3`: a 13-class network MLP (82 features per 5-second w
 - **Backend is reported, not assumed.** The app first tries Android NNAPI with NNAPI's CPU path and ONNX Runtime's CPU fallback both disabled; a session only exists in that mode if every node runs on an accelerator. Otherwise it runs on the ONNX Runtime CPU provider and says so.
 - **Self-test:** Settings → *Run model self-test* replays the 13 golden windows from `test-data/test_vector.json` and compares with outputs recorded from ONNX Runtime on the same files (tolerance 0.05).
 - Known result on those 13 vectors: 12/13 top-class correct. The `C2_BEACON` window is classified `BENIGN` by the MLPs (and by the XGBoost baseline).
+
+### S0: static APK model
+
+`drebin_hybrid_v3` (LightGBM, 300 trees, Drebin-215 + 51 modern features) exported with onnxmltools to `static_lgbm.onnx` (TreeEnsembleClassifier, ONNX Runtime **CPU**; tree ensembles have no NNAPI kernel, so S0 never claims the NPU). Then the stage-2 family rules from `predict_v6_family.py` (`static_rules.json`, copied by script, not retyped): `S0 = min(model + rule boost, 1)`.
+
+- **Features are extracted on the phone** by a Kotlin port of `extract_v6.py` (`ai/staticml/`): permissions and components from PackageManager, `classes*.dex` method tables read by a small dex parser, ZIP entries read from the central directory (so duplicate-entry tampering is visible). No APK leaves the device.
+- **Parity:** on 4 real APKs the Kotlin extractor fires exactly the same features as the Python script (`scripts/static/parity/`). The exported ONNX matches LightGBM to 1e-7 on all 44 samples of `extracted_v6.csv`, and the app replays those 44 samples as its S0 self-test.
+- **Found while porting:** with androguard 4.x the script's `s.get()` on dex strings raised, so every string-content feature (e.g. `MODERN_VNC_RAT`, `MODERN_BANK_IMPERSONATION`, `android.intent.action.SEND`) was always 0 in the training CSV. The phone reproduces that (`USE_STRING_CONTENT = false`) because the weights were tuned on it; enabling real strings needs re-tuning first.
+- **Validation (small, be careful):** 42 modern banking-trojan/RAT APKs + 2 benign. At S0 ≥ 0.5: 16/42 malware, 0/2 benign; at ≥ 0.2: 26/42, 0/2. The model alone (no rules) flags 1/42 at 0.5. A false-positive rate is not established: a benign SMS app (QKSMS) scores 1.0 because SMS apps share the SMS-stealer manifest pattern.
+- **Use in scoring:** S0 ≥ 0.5 adds `S0_HIGH` (+25), ≥ 0.2 adds `S0_MEDIUM` (+10). It is one signal among the others, never a verdict on its own; a sideloaded app with S0 ≥ 0.5 gets a "review before granting accessibility" notification, not containment.
+
+### Live network model (live traffic input)
+
+**How traffic gets to the model.** An app chosen for live inspection (by the user: *Watch live traffic*; or automatically: a sideloaded app with static score ≥ 0.2, or an app the engine rates REVIEW/HIGH) is added to the app-scoped VPN tunnel. Its IPv4 TCP and UDP are terminated by a small userspace relay (`enforcement/relay/UserspaceNat.kt`) and re-sent on protected sockets, so the app keeps working while every packet in both directions is measured. IPv6 from watched apps is dropped so it cannot bypass inspection (apps fall back to IPv4). Paused apps in the same tunnel stay black-holed.
+
+**Features and model.** The relay builds the same 12 features per 10-second window as `mischief_extract.py` (bytes and packets up/down, ratio, mean size, unique destination IPs and ports, inter-arrival mean/std, SYN count, UDP fraction). Every 10 s, each watched app's last 10 windows go to `network_live_mlp.onnx` (the 120→64→32→1 MLP from `train_mlp_loro.py`, signed log1p + StandardScaler, Gemm/ReLU only, so it can run fully on an NNAPI accelerator). Probability ≥ 0.9457 (1% FPR in leave-one-RAT-out) raises `E4` (+20), logs an event and alerts.
+
+**Verified here, not assumed:**
+- Relay tested against the real Linux TCP/IP stack through a TUN device: 5 MB downloads and 2 MB uploads byte-identical, 16 parallel downloads over a deliberately lossy link (go-back-N retransmission), UDP echo 20/20, refused ports fail in ms, all flows closed afterwards.
+- Kotlin window features equal the Python extractor on 590 windows (max relative difference 6e-8).
+- The 8 Mischief captures run through this windowing: in-sample AUC 0.991 and 0.1% alerts on the phone's normal background traffic. **Held-out (leave-one-RAT-out) numbers are lower and are the ones to quote: AUC 0.854, 15% recall at 1% FPR.**
+
+**Limits.** Features are measured at the TUN (as the app's TCP/IP stack sees them), not on the radio. The model was trained on 8 RATs in a lab capture; per-app traffic on a real phone may differ, so `E4` is one signal among the others and never pauses an app by itself.
 
 ## Temporal causal chains
 
@@ -132,9 +157,11 @@ iqoo/
 │   ├── assets/threats.json   # Empty indicator list with provenance (release)
 │   └── java/com/dhrashta/x/
 │       ├── ai/               # ONNX Runtime wrapper, network classifier, optional a11y model
+│       │   └── staticml/     # S0: APK/dex reader, extract_v6 port, static model + family rules
 │       ├── data/             # Room database (pruned to 7 days / row caps), allow list, state
 │       ├── decision/         # RiskEngine, CausalChains, TrustPolicy, BrandHeuristic, explanations
 │       ├── enforcement/      # GuardVpnService, DnsForwarder, decoys, beacon detector
+│       │   └── relay/        # Userspace TCP/UDP relay + live 10 s window features
 │       ├── sensing/          # Accessibility, package, posture, usage, profile watchers
 │       └── ui/               # Compose screens
 ├── app/src/debug/assets/     # Labelled demo threat list (debug builds only)

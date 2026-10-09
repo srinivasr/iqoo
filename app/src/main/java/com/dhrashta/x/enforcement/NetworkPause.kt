@@ -58,6 +58,34 @@ object NetworkPause {
         }.isSuccess
     }
 
+    /**
+     * Routes [uid] through the live-inspection relay so its real traffic feeds the network model.
+     * Needs VPN consent already granted; returns false otherwise. Paused apps stay paused.
+     */
+    fun requestInspect(context: Context, uid: Int): Boolean {
+        if (VpnService.prepare(context) != null) return false
+        if (uid in GuardVpnService.inspectedUids(context) || uid in GuardVpnService.containedUids(context)) return true
+        return runCatching {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, GuardVpnService::class.java)
+                    .setAction(GuardVpnService.ACTION_INSPECT_UID)
+                    .putExtra(GuardVpnService.EXTRA_UID, uid),
+            )
+        }.isSuccess
+    }
+
+    fun stopInspect(context: Context, uid: Int) {
+        runCatching {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, GuardVpnService::class.java)
+                    .setAction(GuardVpnService.ACTION_STOP_INSPECT_UID)
+                    .putExtra(GuardVpnService.EXTRA_UID, uid),
+            )
+        }
+    }
+
     fun resume(context: Context, uid: Int) {
         runCatching {
             ContextCompat.startForegroundService(

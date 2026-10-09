@@ -15,6 +15,8 @@ object EventLogger {
     const val SIDELOAD = "sideload"
     const val A11Y_ENABLED = "a11y_enabled"
     const val BEACON_UNKNOWN_HOST = "beacon_unknown_host"
+    /** The live network model scored this app's last 10 windows above its alert threshold. */
+    const val NETWORK_ML_ALERT = "network_ml_alert"
     const val BANK_FOREGROUND = "bank_foreground"
     /**
      * A planted decoy was seen in an outbound packet that entered our tunnel and was dropped there.

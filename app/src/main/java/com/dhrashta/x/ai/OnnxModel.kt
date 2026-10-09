@@ -28,13 +28,34 @@ class OnnxModel private constructor(
     enum class Backend { ACCELERATOR_NNAPI, CPU }
 
     @Synchronized
-    fun run(input: FloatArray): FloatArray {
+    fun run(input: FloatArray, outputIndex: Int = 0): FloatArray {
         require(input.size == inputWidth) { "Expected $inputWidth inputs, got ${input.size}" }
         val env = OrtEnvironment.getEnvironment()
         OnnxTensor.createTensor(env, FloatBuffer.wrap(input), longArrayOf(1, inputWidth.toLong())).use { tensor ->
             session.run(mapOf(inputName to tensor)).use { result ->
                 @Suppress("UNCHECKED_CAST")
-                val value = result.get(0).value as Array<FloatArray>
+                val value = result.get(outputIndex).value as Array<FloatArray>
+                return value[0].copyOf()
+            }
+        }
+    }
+
+    /**
+     * Runs one input tiled into [batch] identical rows and returns row 0 of output [outputIndex].
+     * Needed for Hummingbird-GEMM models that squeeze away a size-1 batch dimension: feeding 2
+     * identical rows and reading row 0 gives the correct single-sample result.
+     */
+    @Synchronized
+    fun runTiled(input: FloatArray, batch: Int, outputIndex: Int): FloatArray {
+        require(input.size == inputWidth) { "Expected $inputWidth inputs, got ${input.size}" }
+        val n = batch.coerceAtLeast(1)
+        val tiled = FloatArray(n * inputWidth)
+        for (b in 0 until n) System.arraycopy(input, 0, tiled, b * inputWidth, inputWidth)
+        val env = OrtEnvironment.getEnvironment()
+        OnnxTensor.createTensor(env, FloatBuffer.wrap(tiled), longArrayOf(n.toLong(), inputWidth.toLong())).use { tensor ->
+            session.run(mapOf(inputName to tensor)).use { result ->
+                @Suppress("UNCHECKED_CAST")
+                val value = result.get(outputIndex).value as Array<FloatArray>
                 return value[0].copyOf()
             }
         }
