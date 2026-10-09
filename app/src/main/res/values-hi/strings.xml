@@ -217,7 +217,7 @@
     <string name="expl_sig_c5">यह सभी इंस्टॉल ऐप्स की सूची देख सकता है</string>
     <string name="expl_sig_d1">वायरलेस डिबगिंग चालू है</string>
     <string name="expl_sig_d2">एक नया वर्क प्रोफ़ाइल दिखा</string>
-    <string name="expl_sig_e4">नेटवर्क मॉडल ने इसके ट्रैफ़िक को ख़तरा श्रेणी में रखा</string>
+    <string name="expl_sig_e4">फ़ोन पर चले नेटवर्क मॉडल को इसका लाइव ट्रैफ़िक रिमोट-कंट्रोल (RAT) जैसा लगा</string>
     <string name="expl_sig_e5">accessibility मॉडल ने इसके व्यवहार को हानिकारक श्रेणी में रखा</string>
     <string name="expl_sig_taint">इसने रखा गया नकली (decoy) डेटा भेजने की कोशिश की (पैकेट रोक दिया गया)</string>
     <string name="selftest_result">%1$d/%2$d गोल्डन विंडो मेल खाईं · अधिकतम अंतर %3$s · %4$s · औसत %5$d µs</string>
@@ -258,4 +258,33 @@
     <string name="explain_trusted">आपने %1$s को भरोसेमंद चुना है, इसलिए DHRASHTA-X इसे नहीं रोकता और अलर्ट नहीं देता। इसका स्कोर फिर भी दिखाया जाता है।</string>
     <string name="set_decoy_title">नकली (decoy) डेटा (वैकल्पिक)</string>
     <string name="set_decoy_detail">एक नकली संपर्क और नकली मान रखता है जिन्हें कोई ईमानदार ऐप नहीं भेजेगा। डिफ़ॉल्ट रूप से बंद; बंद करने पर हट जाते हैं।</string>
+    <string name="expl_sig_s0_high">फ़ोन पर चले स्टैटिक मॉडल ने पाया कि इसका कोड और मैनिफ़ेस्ट बैंकिंग-ट्रोजन / RAT नमूनों से काफ़ी मिलता है</string>
+    <string name="expl_sig_s0_medium">फ़ोन पर चले स्टैटिक मॉडल ने इसके कोड और मैनिफ़ेस्ट में बैंकिंग-ट्रोजन / RAT नमूनों जैसी कुछ बातें पाईं</string>
+    <string name="ev_static_title">स्टैटिक ऐप स्कैन (फ़ोन पर ML)</string>
+    <string name="ev_static_detail">स्कोर %1$s = मॉडल %2$s + फ़ैमिली नियम %3$s। %4$s</string>
+    <string name="ev_static_rules_none">कोई फ़ैमिली नियम मेल नहीं खाया।</string>
+    <string name="ev_static_rules">मेल खाए: %1$s।</string>
+    <string name="cov_static">स्टैटिक ऐप-स्कैन मॉडल (S0)</string>
+    <string name="cov_static_detail">LightGBM, 300 ट्री · %1$s · %2$s · %3$d ऐप स्कैन हुए</string>
+    <string name="cov_static_missing">लोड नहीं हुआ; इंस्टॉल ऐप स्कैन नहीं हो रहे</string>
+    <string name="static_selftest_result">%1$d/%2$d गोल्डन नमूने मेल खाए · अधिकतम अंतर %3$s · औसत %4$d µs</string>
+    <string name="notif_static_title">%1$s बैंकिंग ट्रोजन जैसा दिखता है</string>
+    <string name="notif_static_text">फ़ोन पर स्टैटिक स्कैन स्कोर %1$s, और यह Play Store से इंस्टॉल नहीं हुआ। accessibility अनुमति देने से पहले इसे जाँचें।</string>
+    <string name="static_scanning">स्टैटिक स्कैन: %2$d में से %1$d ऐप</string>
+    <string name="action_inspect_start">लाइव ट्रैफ़िक देखें (फ़ोन पर ML)</string>
+    <string name="action_inspect_stop">लाइव ट्रैफ़िक देखना बंद करें</string>
+    <string name="live_status">लाइव ट्रैफ़िक देखा जा रहा है · आख़िरी स्कोर %1$s (अलर्ट %2$s पर) · %3$d जाँच</string>
+    <string name="live_status_waiting">लाइव ट्रैफ़िक देखा जा रहा है · लगभग 10 सेकंड ट्रैफ़िक के बाद पहला नतीजा</string>
+    <string name="ev_live_title">लाइव ट्रैफ़िक रिमोट-कंट्रोल (RAT) जैसा दिखता है</string>
+    <string name="ev_live_detail">फ़ोन पर चले नेटवर्क मॉडल ने इस ऐप की आख़िरी %3$d सक्रिय 10-सेकंड विंडो पर %1$s स्कोर दिया (अलर्ट %2$s पर)।</string>
+    <string name="act_live_alert">लाइव ट्रैफ़िक मॉडल ने %1$s को चिह्नित किया</string>
+    <string name="cov_netmodel_live_detail_on">%1$d ऐप देखे जा रहे · %2$s · %3$s</string>
+    <string name="cov_traffic_detail_live">सिर्फ़ उन्हीं ऐप्स का ट्रैफ़िक रिले और मापा जाता है जिन्हें आपने या इंजन ने चुना; बाकी ऐप्स को छुआ नहीं जाता।</string>
+    <string name="toast_inspect_on">%1$s का ट्रैफ़िक देखा जा रहा है</string>
+    <string name="toast_inspect_off">%1$s को देखना बंद किया</string>
+    <string name="live_selftest_result">%1$d/%2$d असली सीक्वेंस मेल खाए · अधिकतम अंतर %3$s · %4$s · औसत %5$d µs</string>
+    <string name="notif_live_title">%1$s: ट्रैफ़िक रिमोट कंट्रोल जैसा है</string>
+    <string name="notif_live_text">फ़ोन पर नेटवर्क मॉडल स्कोर %1$s। जाँचने या इंटरनेट रोकने के लिए DHRASHTA-X खोलें।</string>
+    <string name="notif_inspect_title">ऐप ट्रैफ़िक देखा जा रहा है</string>
+    <string name="notif_inspect_text">%1$d ऐप लाइव ट्रैफ़िक जाँच में</string>
 </resources>

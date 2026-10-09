@@ -1,0 +1,77 @@
+{
+  "model": "NetworkMLP",
+  "architecture": "120 -> 64 -> 32 -> 1",
+  "transform": "signed_log1p + StandardScaler",
+  "threshold_at_1pct_fpr": 0.9457193732261657,
+  "loo": {
+    "mean_auc": 0.8543192928602871,
+    "std_auc": 0.17390514988168862,
+    "mean_recall": 0.1511748447946381,
+    "std_recall": 0.14074584245784505,
+    "mean_fpr": 0.009137948025824315
+  },
+  "comparison": {
+    "gru": {
+      "auc": 0.869,
+      "recall": 0.205
+    },
+    "lightgbm": {
+      "auc": 0.9668,
+      "recall": 0.468
+    },
+    "mlp": {
+      "auc": 0.8543192928602871,
+      "recall": 0.1511748447946381
+    }
+  },
+  "per_fold": [
+    {
+      "held_out": "RAT01_AndroidTester",
+      "auc": 0.9969413779367122,
+      "recall": 0.0,
+      "fpr": 0.0
+    },
+    {
+      "held_out": "RAT02_DroidJack",
+      "auc": 0.4228665437169922,
+      "recall": 0.026490066225165563,
+      "fpr": 0.04430379746835443
+    },
+    {
+      "held_out": "RAT03_HawkShaw",
+      "auc": 0.8532921219091432,
+      "recall": 0.0472972972972973,
+      "fpr": 0.010638297872340425
+    },
+    {
+      "held_out": "RAT04_SpyMAX",
+      "auc": 0.905856030119689,
+      "recall": 0.42954856361149113,
+      "fpr": 0.014577259475218658
+    },
+    {
+      "held_out": "RAT05_AndroRAT",
+      "auc": 0.8119439931925426,
+      "recall": 0.14388489208633093,
+      "fpr": 0.0035842293906810036
+    },
+    {
+      "held_out": "RAT06_Saefko",
+      "auc": 0.9036442859972271,
+      "recall": 0.051470588235294115,
+      "fpr": 0.0
+    },
+    {
+      "held_out": "RAT07_AhMyth",
+      "auc": 0.94000999000999,
+      "recall": 0.24857142857142858,
+      "fpr": 0.0
+    },
+    {
+      "held_out": "RAT08_cli_AndroRAT",
+      "auc": 1.0,
+      "recall": 0.2621359223300971,
+      "fpr": 0.0
+    }
+  ]
+}

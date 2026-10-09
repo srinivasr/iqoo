@@ -37,6 +37,8 @@ import com.dhrashta.x.R
 import com.dhrashta.x.data.AllowList
 import com.dhrashta.x.data.ModelStatus
 import com.dhrashta.x.data.ModelStatusStore
+import com.dhrashta.x.data.StaticScanStore
+import com.dhrashta.x.data.LiveNetworkStore
 import com.dhrashta.x.decision.ThreatList
 import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
@@ -139,23 +141,31 @@ class MainActivity : ComponentActivity() {
         val connections by remember { EventLogger.observeConnections(applicationContext) }.collectAsStateWithLifecycle(emptyList())
         val installed by produceState<List<InstalledApp>?>(null, tick) { value = loadInstalledApps(applicationContext) }
         val modelStatus by ModelStatusStore.state.collectAsStateWithLifecycle()
+        val staticVerdicts by remember { StaticScanStore.load(applicationContext); StaticScanStore.state }.collectAsStateWithLifecycle()
+        val liveScores by LiveNetworkStore.state.collectAsStateWithLifecycle()
         val threatInfo by produceState<ThreatList.Info?>(null, tick) {
             value = withContext(Dispatchers.IO) { runCatching { ThreatList.info(applicationContext) }.getOrNull() }
         }
         // Only UIDs inside an ESTABLISHED tunnel are shown as paused; a request is not containment.
         val pausedUids = remember(tick) { GuardVpnService.containedUids(applicationContext) }
+        val inspectingUids = remember(tick, liveScores) { GuardVpnService.inspectedUids(applicationContext) }
         val trusted = remember(tick) { AllowList.get(applicationContext) }
         val language = remember(tick) { AppLanguage.current(this) }
 
-        val apps = remember(installed, scores, events, pausedUids, trusted) {
-            installed?.let { assessApps(resources, it, scores, events, pausedUids, trusted) }
+        val apps = remember(installed, scores, events, pausedUids, trusted, staticVerdicts, inspectingUids, liveScores) {
+            installed?.let {
+                assessApps(
+                    resources, it, scores, events, pausedUids, trusted, staticVerdicts,
+                    inspectingUids, liveScores, LiveNetworkStore.threshold,
+                )
+            }
         }
         val labels = remember(installed) { installed.orEmpty().associate { it.pkg to it.label } }
         val packagesByUid = remember(installed) { installed.orEmpty().associate { it.uid to it.pkg } }
         val activity = remember(scores, events, connections, installed) {
             buildActivity(resources, scores, events, connections, labels, packagesByUid, installed.orEmpty())
         }
-        val status = remember(tick, evaluation.monitoring, modelStatus, threatInfo) {
+        val status = remember(tick, evaluation.monitoring, modelStatus, threatInfo, inspectingUids) {
             val dnsOn = VpnService.prepare(this) == null && GuardVpnService.dnsMonitorEnabled(applicationContext)
             SettingsStatus(
                 monitoring = evaluation.monitoring,
@@ -164,7 +174,7 @@ class MainActivity : ComponentActivity() {
                 usageAccess = UsageWatcher.hasUsageAccess(applicationContext),
                 notifications = notificationsEnabled(),
                 decoys = CanaryManager.isEnabled(applicationContext),
-                coverage = coverage(evaluation.monitoring, dnsOn, modelStatus, threatInfo),
+                coverage = coverage(evaluation.monitoring, dnsOn, modelStatus, threatInfo, inspectingUids.size),
             )
         }
         val statusMessage = when {
@@ -241,7 +251,10 @@ class MainActivity : ComponentActivity() {
                     onUninstall = { GuidedRecovery.requestUninstall(this, risk.app.pkg) },
                     onTrust = { trust -> setTrusted(risk.app.pkg, trust) },
                     onListen = ::speak,
+                    onInspect = { on -> withVpnConsent { inspect(risk, on) } },
+                    liveThreshold = LiveNetworkStore.threshold,
                     onAnalyze = {
+                        DhrashtaForegroundService.requestStaticScan(this, risk.app.pkg)
                         DhrashtaForegroundService.requestEvaluation(this, risk.app.pkg)
                         toast(getString(R.string.toast_analyzing, risk.app.label))
                     },
@@ -278,6 +291,17 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    /** Starts or stops relaying this app's traffic into the live network model. */
+    private fun inspect(risk: AppRisk, on: Boolean) {
+        if (on) {
+            if (NetworkPause.requestInspect(this, risk.app.uid)) toast(getString(R.string.toast_inspect_on, risk.app.label))
+        } else {
+            NetworkPause.stopInspect(this, risk.app.uid)
+            toast(getString(R.string.toast_inspect_off, risk.app.label))
+        }
+        refreshSoon()
+    }
+
     private fun toggleDecoys() {
         if (CanaryManager.isEnabled(this)) {
             CanaryManager.setEnabled(this, false)
@@ -304,6 +328,7 @@ class MainActivity : ComponentActivity() {
         dnsOn: Boolean,
         model: ModelStatus,
         threats: ThreatList.Info?,
+        watched: Int,
     ): List<CoverageItem> = listOf(
         CoverageItem(
             getString(R.string.cov_a11y),
@@ -317,8 +342,8 @@ class MainActivity : ComponentActivity() {
         ),
         CoverageItem(
             getString(R.string.cov_traffic),
-            getString(R.string.cov_traffic_detail),
-            CoverageState.NotMonitored,
+            getString(if (watched > 0) R.string.cov_traffic_detail_live else R.string.cov_traffic_detail),
+            if (watched > 0) CoverageState.On else CoverageState.NotMonitored,
         ),
         CoverageItem(
             getString(R.string.cov_bank),
@@ -345,8 +370,36 @@ class MainActivity : ComponentActivity() {
         ),
         CoverageItem(
             getString(R.string.cov_netmodel_live),
-            getString(R.string.cov_netmodel_live_detail),
-            if (model.networkLiveInput) CoverageState.On else CoverageState.NotMonitored,
+            if (model.liveLoaded) {
+                getString(
+                    R.string.cov_netmodel_live_detail_on,
+                    watched,
+                    model.liveBackend.orEmpty(),
+                    model.liveSelfTestSummary ?: getString(R.string.selftest_pending),
+                )
+            } else {
+                getString(R.string.cov_model_missing)
+            },
+            when {
+                model.liveLoaded && watched > 0 && model.liveSelfTestPassed == true -> CoverageState.On
+                model.liveLoaded -> CoverageState.Off
+                else -> CoverageState.Off
+            },
+        ),
+        CoverageItem(
+            getString(R.string.cov_static),
+            if (model.staticLoaded) {
+                val progress = model.staticProgress?.let { (done, total) -> getString(R.string.static_scanning, done, total) }
+                getString(
+                    R.string.cov_static_detail,
+                    model.staticBackend.orEmpty(),
+                    progress ?: model.staticSelfTestSummary ?: getString(R.string.selftest_pending),
+                    model.staticScanned,
+                )
+            } else {
+                getString(R.string.cov_static_missing)
+            },
+            if (model.staticLoaded && model.staticSelfTestPassed == true) CoverageState.On else CoverageState.Off,
         ),
         CoverageItem(
             getString(R.string.cov_a11ymodel),

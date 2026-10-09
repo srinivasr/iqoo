@@ -1,0 +1,80 @@
+{
+  "dataset": "Drebin-215",
+  "total_samples": 15036,
+  "features": 215,
+  "train_size": 10530,
+  "val_size": 2250,
+  "test_size": 2256,
+  "class_balance": {
+    "benign": 9476,
+    "malware": 5560
+  },
+  "cv_f1_mean": 0.9806978324806561,
+  "cv_auc_mean": 0.9980978058151836,
+  "test_auc": 0.9986571923895483,
+  "test_f1": 0.9867788461538461,
+  "test_precision": 0.9891566265060241,
+  "test_recall": 0.9844124700239808,
+  "top_15_features": [
+    {
+      "feature": "TelephonyManager.getDeviceId",
+      "importance": 384
+    },
+    {
+      "feature": "TelephonyManager.getSubscriberId",
+      "importance": 352
+    },
+    {
+      "feature": "WRITE_EXTERNAL_STORAGE",
+      "importance": 344
+    },
+    {
+      "feature": "GET_ACCOUNTS",
+      "importance": 327
+    },
+    {
+      "feature": "Ljava.lang.Object.getClass",
+      "importance": 324
+    },
+    {
+      "feature": "SEND_SMS",
+      "importance": 323
+    },
+    {
+      "feature": "TelephonyManager.getLine1Number",
+      "importance": 313
+    },
+    {
+      "feature": "WRITE_HISTORY_BOOKMARKS",
+      "importance": 308
+    },
+    {
+      "feature": "ClassLoader",
+      "importance": 301
+    },
+    {
+      "feature": "READ_PHONE_STATE",
+      "importance": 290
+    },
+    {
+      "feature": "mount",
+      "importance": 288
+    },
+    {
+      "feature": "android.content.pm.PackageInfo",
+      "importance": 283
+    },
+    {
+      "feature": "Ljava.net.URLDecoder",
+      "importance": 266
+    },
+    {
+      "feature": "HttpGet.init",
+      "importance": 260
+    },
+    {
+      "feature": "android.intent.action.BOOT_COMPLETED",
+      "importance": 257
+    }
+  ]
+}

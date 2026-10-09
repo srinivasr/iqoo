@@ -231,7 +231,7 @@
     <string name="expl_sig_c5">it can list all installed apps</string>
     <string name="expl_sig_d1">wireless debugging is switched on</string>
     <string name="expl_sig_d2">a new work profile appeared</string>
-    <string name="expl_sig_e4">the network model classified its traffic as a threat class</string>
+    <string name="expl_sig_e4">its live traffic looks like remote-control (RAT) traffic to the on-device network model</string>
     <string name="expl_sig_e5">the accessibility model classified its behaviour as non-benign</string>
     <string name="expl_sig_taint">it tried to send a planted decoy value (the packet was blocked)</string>
     <string name="selftest_result">%1$d/%2$d golden windows match · max diff %3$s · %4$s · %5$d µs avg</string>
@@ -272,4 +272,33 @@
     <string name="explain_trusted">You marked %1$s as trusted, so DHRASHTA-X does not pause it or alert about it. Its evidence score is still shown.</string>
     <string name="set_decoy_title">Decoy data (optional)</string>
     <string name="set_decoy_detail">Plants a fake contact and fake values that no honest app should send. Off by default; turning it off removes them.</string>
+    <string name="expl_sig_s0_high">the on-device static model found that its code and manifest closely resemble banking-trojan / RAT samples</string>
+    <string name="expl_sig_s0_medium">the on-device static model found some code and manifest traits shared with banking-trojan / RAT samples</string>
+    <string name="ev_static_title">Static app scan (on-device ML)</string>
+    <string name="ev_static_detail">Score %1$s = model %2$s + family rules %3$s. %4$s</string>
+    <string name="ev_static_rules_none">No family rule matched.</string>
+    <string name="ev_static_rules">Matched: %1$s.</string>
+    <string name="cov_static">Static app-scan model (S0)</string>
+    <string name="cov_static_detail">LightGBM, 300 trees · %1$s · %2$s · %3$d apps scanned</string>
+    <string name="cov_static_missing">Not loaded; installed apps are not scanned</string>
+    <string name="static_selftest_result">%1$d/%2$d golden samples match · max diff %3$s · %4$d µs avg</string>
+    <string name="notif_static_title">%1$s looks like a banking trojan</string>
+    <string name="notif_static_text">On-device static scan score %1$s and it was not installed from Play Store. Review it before giving it accessibility access.</string>
+    <string name="static_scanning">Static scan: %1$d of %2$d apps</string>
+    <string name="action_inspect_start">Watch live traffic (on-device ML)</string>
+    <string name="action_inspect_stop">Stop watching live traffic</string>
+    <string name="live_status">Watching live traffic · last score %1$s (alert at %2$s) · %3$d checks</string>
+    <string name="live_status_waiting">Watching live traffic · first result after about 10 seconds of traffic</string>
+    <string name="ev_live_title">Live traffic looks like remote-control (RAT) traffic</string>
+    <string name="ev_live_detail">The on-device network model scored %1$s (alert at %2$s) on this app\'s last %3$d active 10-second windows.</string>
+    <string name="act_live_alert">Live traffic model flagged %1$s</string>
+    <string name="cov_netmodel_live_detail_on">%1$d apps watched · %2$s · %3$s</string>
+    <string name="cov_traffic_detail_live">Relayed and measured only for apps you or the engine chose to watch; other apps are not touched.</string>
+    <string name="toast_inspect_on">Watching %1$s\'s traffic</string>
+    <string name="toast_inspect_off">Stopped watching %1$s</string>
+    <string name="live_selftest_result">%1$d/%2$d real sequences match · max diff %3$s · %4$s · %5$d µs avg</string>
+    <string name="notif_live_title">%1$s: traffic looks like remote control</string>
+    <string name="notif_live_text">On-device network model score %1$s. Open DHRASHTA-X to review it or pause its internet.</string>
+    <string name="notif_inspect_title">Watching app traffic</string>
+    <string name="notif_inspect_text">%1$d app(s) under live traffic inspection</string>
 </resources>

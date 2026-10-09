@@ -47,6 +47,8 @@ object Explanations {
         "E4" -> R.string.expl_sig_e4
         "E5" -> R.string.expl_sig_e5
         "HIGH_TAINT_MATCH" -> R.string.expl_sig_taint
+        "S0_HIGH" -> R.string.expl_sig_s0_high
+        "S0_MEDIUM" -> R.string.expl_sig_s0_medium
         else -> null
     }
 }

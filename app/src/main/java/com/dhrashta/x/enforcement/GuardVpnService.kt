@@ -15,12 +15,19 @@ import android.system.OsConstants
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.dhrashta.x.R
+import com.dhrashta.x.ai.LiveNetworkModel
+import com.dhrashta.x.data.LiveNetworkStore
+import com.dhrashta.x.data.ModelStatusStore
+import com.dhrashta.x.enforcement.relay.Ipv4
+import com.dhrashta.x.enforcement.relay.LiveWindowFeatures
+import com.dhrashta.x.enforcement.relay.UserspaceNat
 import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.sensing.DhrashtaForegroundService
 import com.dhrashta.x.ui.MainActivity
 import java.io.FileInputStream
+import java.io.FileOutputStream
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.util.concurrent.ConcurrentHashMap
@@ -29,15 +36,21 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 /**
- * One VPN, two modes:
- *  - Containment: when at least one UID is paused, a tunnel scoped ONLY to those apps black-holes
- *    their traffic. If none of their packages can be added to the tunnel, no tunnel is created at all
- *    (an empty allow-list would otherwise route every app into the black hole).
- *  - DNS monitor: when nothing is paused and monitoring is on, only the virtual resolver is routed.
+ * One VPN, three behaviours:
+ *  - Containment: paused UIDs are routed into a tunnel scoped ONLY to the affected apps and
+ *    black-holed. If none of their packages can be added, no tunnel is created at all (an empty
+ *    allow-list would otherwise route every app into the black hole).
+ *  - Live inspection: watched UIDs share that app-scoped tunnel, but their IPv4 TCP/UDP is relayed
+ *    for real by [UserspaceNat]; every packet's metadata feeds [LiveWindowFeatures] and, every 10 s,
+ *    the live network model ([LiveNetworkModel]). Their IPv6 is dropped so it cannot bypass inspection
+ *    (apps fall back to IPv4).
+ *  - DNS monitor: when nothing is paused or watched and monitoring is on, only the virtual resolver
+ *    is routed.
  *
  * State shown to the user is the state that exists: a UID counts as contained only after the
  * tunnel that includes it has been established ([containedUids]). Requests are tracked separately.
@@ -45,6 +58,12 @@ import kotlinx.coroutines.launch
 class GuardVpnService : VpnService() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val requestedUids = ConcurrentHashMap.newKeySet<Int>()
+    private val requestedInspect = ConcurrentHashMap.newKeySet<Int>()
+    private val liveFeatures = LiveWindowFeatures()
+    @Volatile private var nat: UserspaceNat? = null
+    private var scoringJob: Job? = null
+    private val uidByTuple = ConcurrentHashMap<String, Int>()
+    private val lastLiveAlert = ConcurrentHashMap<String, Long>()
     private lateinit var inspector: PacketInspector
     private var tunnel: ParcelFileDescriptor? = null
     private var drainJob: Job? = null
@@ -63,6 +82,7 @@ class GuardVpnService : VpnService() {
         createNotificationChannel()
         val prefs = getSharedPreferences(PREFS, MODE_PRIVATE)
         requestedUids += prefs.getStringSet(KEY_REQUESTED, emptySet()).orEmpty().mapNotNull(String::toIntOrNull)
+        requestedInspect += prefs.getStringSet(KEY_INSPECT_REQUESTED, emptySet()).orEmpty().mapNotNull(String::toIntOrNull)
         monitorEnabled = prefs.getBoolean(KEY_MONITOR, false)
     }
 
@@ -72,6 +92,8 @@ class GuardVpnService : VpnService() {
         when (intent?.action) {
             ACTION_PAUSE_UID -> if (uid != Process.INVALID_UID) requestedUids += uid
             ACTION_RESUME_UID -> if (uid != Process.INVALID_UID) requestedUids -= uid
+            ACTION_INSPECT_UID -> if (uid != Process.INVALID_UID) requestedInspect += uid
+            ACTION_STOP_INSPECT_UID -> if (uid != Process.INVALID_UID) requestedInspect -= uid
             ACTION_START_MONITOR -> monitorEnabled = true
             ACTION_STOP_MONITOR -> monitorEnabled = false
         }
@@ -84,6 +106,7 @@ class GuardVpnService : VpnService() {
         synchronized(this) {
             closeTunnel()
             setContained(emptySet())
+            setInspected(emptySet())
         }
         EvaluationStateStore.update { it.copy(contained = false, message = "VPN permission was revoked") }
         stopSelf()
@@ -94,6 +117,7 @@ class GuardVpnService : VpnService() {
         synchronized(this) {
             closeTunnel()
             setContained(emptySet())
+            setInspected(emptySet())
         }
         serviceScope.cancel()
         super.onDestroy()
@@ -104,8 +128,9 @@ class GuardVpnService : VpnService() {
     private fun rebuildTunnel() {
         closeTunnel()
         generation++
-        if (requestedUids.isEmpty()) {
+        if (requestedUids.isEmpty() && requestedInspect.isEmpty()) {
             setContained(emptySet())
+            setInspected(emptySet())
             if (monitorEnabled && prepare(this) == null) {
                 establishDnsMonitorTunnel(generation)
                 return
@@ -116,25 +141,27 @@ class GuardVpnService : VpnService() {
         }
         if (prepare(this) != null) {
             setContained(emptySet())
+            setInspected(emptySet())
             EvaluationStateStore.update {
                 it.copy(contained = false, message = "Open DHRASHTA-X and grant VPN permission to contain this app")
             }
             stopSelf()
             return
         }
-        establishContainmentTunnel(generation)
+        establishAppTunnel(generation)
     }
 
-    private fun establishContainmentTunnel(gen: Int) {
+    private fun establishAppTunnel(gen: Int) {
+        val upstream = upstreamDns()
         val builder = Builder()
-            .setSession("DHRASHTA-X containment")
+            .setSession(if (requestedUids.isEmpty()) "DHRASHTA-X live inspection" else "DHRASHTA-X containment")
             .setMtu(1500)
             .addAddress("10.0.0.2", 32)
             .addAddress("fd00:d4a5::2", 128)
             .addRoute("0.0.0.0", 0)
             .addRoute("::", 0)
-            .addDnsServer("1.1.1.1")
-            .addDnsServer("2606:4700:4700::1111")
+            // Watched apps resolve through the real resolver over the relay; paused apps are dropped anyway.
+            .addDnsServer(upstream.hostAddress ?: "1.1.1.1")
             .setBlocking(true)
         // Only UIDs with at least one package actually added to the tunnel are contained.
         val containedNow = mutableSetOf<Int>()
@@ -149,13 +176,29 @@ class GuardVpnService : VpnService() {
                 }
             }
         }
-        if (containedNow.isEmpty()) {
+        val inspectedNow = mutableSetOf<Int>()
+        (requestedInspect - requestedUids).forEach { uid ->
+            for (pkg in packageManager.getPackagesForUid(uid).orEmpty()) {
+                if (pkg == packageName) continue
+                try {
+                    builder.addAllowedApplication(pkg)
+                    inspectedNow += uid
+                } catch (_: PackageManager.NameNotFoundException) {
+                    // Uninstalled since the request.
+                }
+            }
+        }
+        if (containedNow.isEmpty() && inspectedNow.isEmpty()) {
             // Without a single allowed application the VPN would apply to EVERY app and black-hole
             // the whole device. Never establish in that state.
             setContained(emptySet())
+            setInspected(emptySet())
+            if (requestedUids.isNotEmpty()) {
+                EvaluationStateStore.update { it.copy(contained = false, message = "Could not map the risky app to an installed package; nothing was paused") }
+            }
             requestedUids.clear()
+            requestedInspect.clear()
             persistRequests()
-            EvaluationStateStore.update { it.copy(contained = false, message = "Could not map the risky app to an installed package; nothing was paused") }
             stopForeground(STOP_FOREGROUND_REMOVE)
             stopSelf()
             return
@@ -165,12 +208,28 @@ class GuardVpnService : VpnService() {
             .getOrNull()
         if (descriptor == null) {
             setContained(emptySet())
-            EvaluationStateStore.update { it.copy(contained = false, message = "Could not establish containment VPN") }
+            setInspected(emptySet())
+            EvaluationStateStore.update { it.copy(contained = false, message = "Could not establish the app VPN") }
             return
         }
         tunnel = descriptor
         setContained(containedNow)
-        EvaluationStateStore.update { it.copy(contained = true, message = "Risky app network access is paused") }
+        setInspected(inspectedNow)
+        if (containedNow.isNotEmpty()) {
+            EvaluationStateStore.update { it.copy(contained = true, message = "Risky app network access is paused") }
+        }
+        val output = FileOutputStream(descriptor.fileDescriptor)
+        val relay = if (inspectedNow.isEmpty()) null else UserspaceNat(
+            writeToTun = { packet -> synchronized(output) { runCatching { output.write(packet) } } },
+            protectTcp = { socket -> protect(socket) },
+            protectUdp = { socket -> protect(socket) },
+            observer = { uid, ts, length, outgoing, remoteIp, remotePort, protocol, syn ->
+                liveFeatures.record(uid, ts, length, outgoing, remoteIp, remotePort, protocol, syn)
+            },
+        ).also { it.start() }
+        nat = relay
+        if (relay != null) startLiveScoring(gen)
+        val single = (containedNow + inspectedNow).singleOrNull()
         drainJob = serviceScope.launch {
             FileInputStream(descriptor.fileDescriptor).use { input ->
                 val buffer = ByteArray(32_767)
@@ -181,15 +240,94 @@ class GuardVpnService : VpnService() {
                         break
                     }
                     if (count <= 0) continue
-                    val resolvedUid = inspector.getUid(buffer, count)
-                    CanaryMatcher.scan(buffer, count)?.let { token -> onCanaryAttempt(resolvedUid, token) }
-                    val blockedUid = if (resolvedUid in containedNow) resolvedUid else containedNow.first()
+                    val resolved = resolveUid(buffer, count)
+                    val uid = if (resolved == Process.INVALID_UID && single != null) single else resolved
+                    val token = CanaryMatcher.scan(buffer, count)
+                    if (token != null) {
+                        // Never forwarded, also for watched apps: this is a blocked send attempt.
+                        onCanaryAttempt(uid, token)
+                        continue
+                    }
+                    if (relay != null && uid in inspectedNow) {
+                        if (Ipv4.version(buffer) == 4) relay.handleOutbound(buffer, count, uid)
+                        // IPv6 from a watched app is dropped so it falls back to IPv4 inside the relay.
+                        continue
+                    }
+                    // Paused apps (or traffic we cannot attribute): drained without a response, which
+                    // intentionally black-holes their IPv4 and IPv6 traffic.
+                    val blockedUid = if (uid in containedNow) uid else containedNow.firstOrNull() ?: continue
                     logBlockedThrottled(blockedUid, inspector.remoteAddress(buffer, count))
-                    // This TUN is scoped only to contained packages. Draining without writing a
-                    // response intentionally black-holes their IPv4 and IPv6 traffic.
                 }
             }
         }
+        Log.i(TAG, "App tunnel up (gen $gen): paused=$containedNow watched=$inspectedNow dns=${upstream.hostAddress}")
+    }
+
+    /** Owner UID of the connection a packet belongs to, cached per 5-tuple (a binder call otherwise). */
+    private fun resolveUid(buffer: ByteArray, count: Int): Int {
+        val info = inspector.parse(buffer, count) ?: return Process.INVALID_UID
+        val key = "${info.protocol}|${info.source}|${info.destination}"
+        uidByTuple[key]?.let { return it }
+        val uid = inspector.getUid(buffer, count)
+        if (uid != Process.INVALID_UID) {
+            if (uidByTuple.size > 4_096) uidByTuple.clear()
+            uidByTuple[key] = uid
+        }
+        return uid
+    }
+
+    /** Every 10 s: close traffic windows, score each watched app's last 10 windows, publish, alert. */
+    private fun startLiveScoring(gen: Int) {
+        scoringJob = serviceScope.launch {
+            val model = LiveNetworkModel.shared(this@GuardVpnService)
+            if (model == null) {
+                Log.w(TAG, "Live inspection is relaying traffic, but the live network model is unavailable")
+                return@launch
+            }
+            LiveNetworkStore.threshold = model.threshold
+            ModelStatusStore.update { it.copy(networkLiveInput = true, liveBackend = model.backendDetail) }
+            while (isActive && gen == generation) {
+                delay(LIVE_TICK_MILLIS)
+                val now = System.currentTimeMillis()
+                for (sequence in liveFeatures.roll(now)) {
+                    val score = runCatching { model.score(sequence.windows) }
+                        .onFailure { Log.w(TAG, "Live scoring failed", it) }
+                        .getOrNull() ?: continue
+                    val pkg = packageForUid(sequence.uid)
+                    LiveNetworkStore.record(pkg, sequence.uid, score.probability, sequence.activeWindows, now, score.alert)
+                    Log.i(TAG, "Live $pkg p=${"%.4f".format(score.probability)} logit=${"%.2f".format(score.logit)} " +
+                        "active=${sequence.activeWindows}/10 alert=${score.alert} last=${sequence.windows.last().joinToString(",") { "%.1f".format(it) }}")
+                    if (score.alert) onLiveAlert(pkg, now, score.probability)
+                }
+            }
+        }
+    }
+
+    private fun onLiveAlert(pkg: String, at: Long, probability: Float) {
+        val last = lastLiveAlert[pkg]
+        if (last != null && at - last < LIVE_ALERT_COOLDOWN_MILLIS) return
+        lastLiveAlert[pkg] = at
+        serviceScope.launch {
+            EventLogger.logEvent(pkg, EventLogger.NETWORK_ML_ALERT, at)
+            DhrashtaForegroundService.requestEvaluation(this@GuardVpnService, pkg)
+        }
+        runCatching {
+            val label = packageManager.getApplicationLabel(packageManager.getApplicationInfo(pkg, 0)).toString()
+            val text = getString(R.string.notif_live_text, "%.2f".format(probability))
+            val notification = NotificationCompat.Builder(this, DhrashtaForegroundService.ALERT_CHANNEL)
+                .setSmallIcon(R.drawable.ic_shield)
+                .setContentTitle(getString(R.string.notif_live_title, label))
+                .setContentText(text)
+                .setStyle(NotificationCompat.BigTextStyle().bigText(text))
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setAutoCancel(true)
+                .setContentIntent(
+                    PendingIntent.getActivity(this, pkg.hashCode(), Intent(this, MainActivity::class.java),
+                        PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT),
+                )
+                .build()
+            getSystemService(NotificationManager::class.java).notify(("live" + pkg).hashCode(), notification)
+        }.onFailure { Log.w(TAG, "Could not post live alert", it) }
     }
 
     /**
@@ -300,6 +438,11 @@ class GuardVpnService : VpnService() {
     private fun closeTunnel() {
         drainJob?.cancel()
         drainJob = null
+        scoringJob?.cancel()
+        scoringJob = null
+        nat?.stop()
+        nat = null
+        ModelStatusStore.update { it.copy(networkLiveInput = false) }
         runCatching { tunnel?.close() }
         tunnel = null
     }
@@ -310,9 +453,16 @@ class GuardVpnService : VpnService() {
             .commit()
     }
 
+    private fun setInspected(uids: Set<Int>) {
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit()
+            .putStringSet(KEY_INSPECTED, uids.map(Int::toString).toSet())
+            .commit()
+    }
+
     private fun persistRequests() {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
             .putStringSet(KEY_REQUESTED, requestedUids.map(Int::toString).toSet())
+            .putStringSet(KEY_INSPECT_REQUESTED, requestedInspect.map(Int::toString).toSet())
             .putBoolean(KEY_MONITOR, monitorEnabled)
             .apply()
     }
@@ -325,10 +475,18 @@ class GuardVpnService : VpnService() {
 
     private fun notification() = NotificationCompat.Builder(this, CHANNEL)
         .setSmallIcon(R.drawable.ic_shield)
-        .setContentTitle(getString(if (requestedUids.isEmpty()) R.string.notif_dns_title else R.string.notif_contain_title))
+        .setContentTitle(
+            getString(
+                when {
+                    requestedUids.isNotEmpty() -> R.string.notif_contain_title
+                    requestedInspect.isNotEmpty() -> R.string.notif_inspect_title
+                    else -> R.string.notif_dns_title
+                },
+            ),
+        )
         .setContentText(
             if (requestedUids.isEmpty()) {
-                getString(R.string.notif_dns_text)
+                if (requestedInspect.isEmpty()) getString(R.string.notif_dns_text) else getString(R.string.notif_inspect_text, requestedInspect.size)
             } else {
                 resources.getQuantityString(R.plurals.notif_contain_text, requestedUids.size, requestedUids.size)
             },
@@ -349,6 +507,8 @@ class GuardVpnService : VpnService() {
         const val ACTION_RESUME_UID = "com.dhrashta.x.action.RESUME_UID"
         const val ACTION_START_MONITOR = "com.dhrashta.x.action.START_DNS_MONITOR"
         const val ACTION_STOP_MONITOR = "com.dhrashta.x.action.STOP_DNS_MONITOR"
+        const val ACTION_INSPECT_UID = "com.dhrashta.x.action.INSPECT_UID"
+        const val ACTION_STOP_INSPECT_UID = "com.dhrashta.x.action.STOP_INSPECT_UID"
         const val EXTRA_UID = "uid"
 
         /** UIDs whose traffic is ACTUALLY inside an established containment tunnel right now. */
@@ -359,6 +519,11 @@ class GuardVpnService : VpnService() {
         /** UIDs the user or engine asked to pause (may not be contained yet). */
         fun requestedUids(context: Context): Set<Int> =
             context.getSharedPreferences(PREFS, MODE_PRIVATE).getStringSet(KEY_REQUESTED, emptySet())
+                .orEmpty().mapNotNull(String::toIntOrNull).toSet()
+
+        /** UIDs whose traffic is ACTUALLY being relayed and scored by live inspection right now. */
+        fun inspectedUids(context: Context): Set<Int> =
+            context.getSharedPreferences(PREFS, MODE_PRIVATE).getStringSet(KEY_INSPECTED, emptySet())
                 .orEmpty().mapNotNull(String::toIntOrNull).toSet()
 
         /** True if DNS beacon monitoring has been switched on. */
@@ -372,6 +537,10 @@ class GuardVpnService : VpnService() {
         private const val KEY_REQUESTED = "paused_uids"
         private const val KEY_CONTAINED = "contained_uids"
         private const val KEY_MONITOR = "dns_monitor"
+        private const val KEY_INSPECT_REQUESTED = "inspect_requested_uids"
+        private const val KEY_INSPECTED = "inspected_uids"
+        private const val LIVE_TICK_MILLIS = 10_000L
+        private const val LIVE_ALERT_COOLDOWN_MILLIS = 120_000L
         private const val CANARY_COOLDOWN_MILLIS = 60_000L
         private const val BLOCKED_LOG_INTERVAL_MILLIS = 10_000L
     }

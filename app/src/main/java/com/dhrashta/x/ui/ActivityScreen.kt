@@ -95,6 +95,7 @@ fun buildActivity(
         val (kind, title) = when (event.signalId) {
             EventLogger.CANARY_SEND_ATTEMPT -> ActivityKind.Alert to res.getString(R.string.act_canary, name(event.pkg))
             EventLogger.BEACON_UNKNOWN_HOST -> ActivityKind.Network to res.getString(R.string.act_beacon, name(event.pkg))
+            EventLogger.NETWORK_ML_ALERT -> ActivityKind.Alert to res.getString(R.string.act_live_alert, name(event.pkg))
             EventLogger.A11Y_ENABLED -> ActivityKind.Review to res.getString(R.string.act_a11y, name(event.pkg))
             EventLogger.SIDELOAD -> ActivityKind.Review to res.getString(R.string.act_sideload, name(event.pkg))
             EventLogger.BANK_FOREGROUND -> ActivityKind.Device to res.getString(R.string.act_bank)

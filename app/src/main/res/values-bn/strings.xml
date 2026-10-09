@@ -217,7 +217,7 @@
     <string name="expl_sig_c5">এটি সব ইনস্টল করা অ্যাপের তালিকা দেখতে পারে</string>
     <string name="expl_sig_d1">ওয়্যারলেস ডিবাগিং চালু আছে</string>
     <string name="expl_sig_d2">একটি নতুন ওয়ার্ক প্রোফাইল দেখা গেছে</string>
-    <string name="expl_sig_e4">নেটওয়ার্ক মডেল এর ট্রাফিককে হুমকি শ্রেণিতে রেখেছে</string>
+    <string name="expl_sig_e4">ফোনে চলা নেটওয়ার্ক মডেলের কাছে এর লাইভ ট্রাফিক রিমোট-কন্ট্রোল (RAT)-এর মতো লেগেছে</string>
     <string name="expl_sig_e5">accessibility মডেল এর আচরণকে ক্ষতিকর শ্রেণিতে রেখেছে</string>
     <string name="expl_sig_taint">এটি রাখা নকল (decoy) ডেটা পাঠানোর চেষ্টা করেছে (প্যাকেট আটকানো হয়েছে)</string>
     <string name="selftest_result">%1$d/%2$d গোল্ডেন উইন্ডো মিলেছে · সর্বোচ্চ পার্থক্য %3$s · %4$s · গড় %5$d µs</string>
@@ -258,4 +258,33 @@
     <string name="explain_trusted">আপনি %1$s-কে বিশ্বস্ত বলেছেন, তাই DHRASHTA-X এটিকে থামায় না বা সতর্ক করে না। এর স্কোর তবুও দেখানো হয়।</string>
     <string name="set_decoy_title">নকল (decoy) ডেটা (ঐচ্ছিক)</string>
     <string name="set_decoy_detail">একটি নকল কন্টাক্ট ও নকল মান রাখে যা কোনো সৎ অ্যাপ পাঠাবে না। ডিফল্টে বন্ধ; বন্ধ করলে সরিয়ে দেওয়া হয়।</string>
+    <string name="expl_sig_s0_high">ফোনে চলা স্ট্যাটিক মডেল দেখেছে এর কোড ও ম্যানিফেস্ট ব্যাংকিং-ট্রোজান / RAT নমুনার সঙ্গে অনেকটা মেলে</string>
+    <string name="expl_sig_s0_medium">ফোনে চলা স্ট্যাটিক মডেল এর কোড ও ম্যানিফেস্টে ব্যাংকিং-ট্রোজান / RAT নমুনার কিছু বৈশিষ্ট্য পেয়েছে</string>
+    <string name="ev_static_title">স্ট্যাটিক অ্যাপ স্ক্যান (ফোনে ML)</string>
+    <string name="ev_static_detail">স্কোর %1$s = মডেল %2$s + ফ্যামিলি নিয়ম %3$s। %4$s</string>
+    <string name="ev_static_rules_none">কোনো ফ্যামিলি নিয়ম মেলেনি।</string>
+    <string name="ev_static_rules">মিলেছে: %1$s।</string>
+    <string name="cov_static">স্ট্যাটিক অ্যাপ-স্ক্যান মডেল (S0)</string>
+    <string name="cov_static_detail">LightGBM, 300 ট্রি · %1$s · %2$s · %3$dটি অ্যাপ স্ক্যান হয়েছে</string>
+    <string name="cov_static_missing">লোড হয়নি; ইনস্টল করা অ্যাপ স্ক্যান হচ্ছে না</string>
+    <string name="static_selftest_result">%1$d/%2$d গোল্ডেন নমুনা মিলেছে · সর্বোচ্চ পার্থক্য %3$s · গড় %4$d µs</string>
+    <string name="notif_static_title">%1$s ব্যাংকিং ট্রোজানের মতো দেখাচ্ছে</string>
+    <string name="notif_static_text">ফোনে স্ট্যাটিক স্ক্যান স্কোর %1$s, এবং এটি Play Store থেকে ইনস্টল হয়নি। accessibility অনুমতি দেওয়ার আগে যাচাই করুন।</string>
+    <string name="static_scanning">স্ট্যাটিক স্ক্যান: %2$dটির মধ্যে %1$dটি অ্যাপ</string>
+    <string name="action_inspect_start">লাইভ ট্রাফিক দেখুন (ফোনে ML)</string>
+    <string name="action_inspect_stop">লাইভ ট্রাফিক দেখা বন্ধ করুন</string>
+    <string name="live_status">লাইভ ট্রাফিক দেখা হচ্ছে · শেষ স্কোর %1$s (অ্যালার্ট %2$s-এ) · %3$dটি পরীক্ষা</string>
+    <string name="live_status_waiting">লাইভ ট্রাফিক দেখা হচ্ছে · প্রায় 10 সেকেন্ড ট্রাফিকের পরে প্রথম ফল</string>
+    <string name="ev_live_title">লাইভ ট্রাফিক রিমোট-কন্ট্রোল (RAT) ট্রাফিকের মতো</string>
+    <string name="ev_live_detail">ফোনে চলা নেটওয়ার্ক মডেল এই অ্যাপের শেষ %3$dটি সক্রিয় 10-সেকেন্ড উইন্ডোতে %1$s স্কোর দিয়েছে (অ্যালার্ট %2$s-এ)।</string>
+    <string name="act_live_alert">লাইভ ট্রাফিক মডেল %1$s-কে চিহ্নিত করেছে</string>
+    <string name="cov_netmodel_live_detail_on">%1$dটি অ্যাপ দেখা হচ্ছে · %2$s · %3$s</string>
+    <string name="cov_traffic_detail_live">শুধু আপনি বা ইঞ্জিন যেসব অ্যাপ বেছে নিয়েছে তাদের ট্রাফিক রিলে ও মাপা হয়; অন্য অ্যাপে হাত দেওয়া হয় না।</string>
+    <string name="toast_inspect_on">%1$s-এর ট্রাফিক দেখা হচ্ছে</string>
+    <string name="toast_inspect_off">%1$s দেখা বন্ধ হয়েছে</string>
+    <string name="live_selftest_result">%1$d/%2$d আসল সিকোয়েন্স মিলেছে · সর্বোচ্চ পার্থক্য %3$s · %4$s · গড় %5$d µs</string>
+    <string name="notif_live_title">%1$s: ট্রাফিক রিমোট কন্ট্রোলের মতো</string>
+    <string name="notif_live_text">ফোনে নেটওয়ার্ক মডেল স্কোর %1$s। যাচাই করতে বা ইন্টারনেট থামাতে DHRASHTA-X খুলুন।</string>
+    <string name="notif_inspect_title">অ্যাপ ট্রাফিক দেখা হচ্ছে</string>
+    <string name="notif_inspect_text">%1$dটি অ্যাপ লাইভ ট্রাফিক পরীক্ষায়</string>
 </resources>

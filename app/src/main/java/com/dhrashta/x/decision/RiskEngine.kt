@@ -23,6 +23,8 @@ class RiskEngine {
     /**
      * @param networkThreatProbability 1 - P(BENIGN) for a traffic window that was fully observed for this
      *   app, or null when no such window exists. Null never creates a signal.
+     * @param staticScore S0 = static APK model probability fused with family rules (0..1), or null when
+     *   the APK has not been scanned. Null never creates a signal.
      * @param a11yEnabledAt when this app's accessibility service was FIRST seen enabled (from the event
      *   log), or null if that moment is unknown (e.g. it was already on before monitoring started).
      */
@@ -37,6 +39,8 @@ class RiskEngine {
         causalBonus: Int = 0,
         recentEvents: List<Event> = emptyList(),
         a11yEnabledAt: Long? = null,
+        staticScore: Float? = null,
+        networkThreshold: Float = NETWORK_THRESHOLD,
     ): Result {
         val signals = buildList {
             if (!a11y.isAccessibilityTool) add(SignalCatalogue.A1)
@@ -55,8 +59,13 @@ class RiskEngine {
             if (Manifest.permission.QUERY_ALL_PACKAGES in identity.permissions) add(SignalCatalogue.C5)
             if (posture.adbWifiEnabled) add(SignalCatalogue.D1)
             if (posture.newProfileAppeared) add(SignalCatalogue.D2)
-            if (networkThreatProbability != null && networkThreatProbability >= NETWORK_THRESHOLD) add(SignalCatalogue.E4)
+            if (networkThreatProbability != null && networkThreatProbability >= networkThreshold) add(SignalCatalogue.E4)
             if (mlpResult != null && mlpResult.isMalicious) add(SignalCatalogue.E5)
+            when {
+                staticScore == null -> Unit
+                staticScore >= STATIC_HIGH -> add(SignalCatalogue.S0_HIGH)
+                staticScore >= STATIC_MEDIUM -> add(SignalCatalogue.S0_MEDIUM)
+            }
             if (recentEvents.any { it.pkg == identity.pkg && it.signalId == EventLogger.CANARY_SEND_ATTEMPT }) {
                 add(SignalCatalogue.HIGH_TAINT_MATCH)
             }
@@ -76,6 +85,8 @@ class RiskEngine {
         const val PLAY_STORE = "com.android.vending"
         const val TEN_MINUTES = 10 * 60 * 1_000L
         const val NETWORK_THRESHOLD = 0.7f
+        const val STATIC_HIGH = 0.5f
+        const val STATIC_MEDIUM = 0.2f
 
         fun bandFor(score: Int): Band = when {
             score >= 90 -> Band.CRITICAL
