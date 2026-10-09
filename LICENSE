@@ -1,0 +1,8 @@
+Copyright (c) 2026 the DHRASHTA-X authors. All rights reserved.
+
+This source code and the bundled model files are made available for review and evaluation
+(including hackathon judging). No licence is granted to copy, modify, distribute or use them for
+any other purpose without written permission from the authors.
+
+Third-party components keep their own licences, including ONNX Runtime (MIT), AndroidX and
+Jetpack Compose (Apache-2.0) and Kotlin (Apache-2.0).

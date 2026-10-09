@@ -1,0 +1,9 @@
+# Keep scripts runnable on every OS and binaries untouched.
+*.sh        text eol=lf
+gradlew     text eol=lf
+*.bat       text eol=crlf
+*.jar       binary
+*.onnx      binary
+*.png       binary
+*.gif       binary
+*.mp4       binary
