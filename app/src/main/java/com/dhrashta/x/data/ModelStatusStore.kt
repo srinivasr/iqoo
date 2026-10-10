@@ -29,8 +29,50 @@ data class ModelStatus(
 )
 
 object ModelStatusStore {
+    private const val PREFS = "dhrashta_model_toggles"
+    private const val KEY_NET_MODEL = "net_model_enabled"
+    private const val KEY_LIVE_MODEL = "live_model_enabled"
+    private const val KEY_STATIC_MODEL = "static_model_enabled"
+    private const val KEY_A11Y_MODEL = "a11y_model_enabled"
+    private const val KEY_THREAT_LIST = "threat_list_enabled"
+
     private val mutable = MutableStateFlow(ModelStatus())
     val state = mutable.asStateFlow()
+
+    fun isNetModelEnabled(context: android.content.Context): Boolean =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getBoolean(KEY_NET_MODEL, true)
+
+    fun setNetModelEnabled(context: android.content.Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(KEY_NET_MODEL, enabled).apply()
+    }
+
+    fun isLiveModelEnabled(context: android.content.Context): Boolean =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getBoolean(KEY_LIVE_MODEL, true)
+
+    fun setLiveModelEnabled(context: android.content.Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(KEY_LIVE_MODEL, enabled).apply()
+    }
+
+    fun isStaticModelEnabled(context: android.content.Context): Boolean =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getBoolean(KEY_STATIC_MODEL, true)
+
+    fun setStaticModelEnabled(context: android.content.Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(KEY_STATIC_MODEL, enabled).apply()
+    }
+
+    fun isA11yModelEnabled(context: android.content.Context): Boolean =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getBoolean(KEY_A11Y_MODEL, false)
+
+    fun setA11yModelEnabled(context: android.content.Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(KEY_A11Y_MODEL, enabled).apply()
+    }
+
+    fun isThreatListEnabled(context: android.content.Context): Boolean =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).getBoolean(KEY_THREAT_LIST, true)
+
+    fun setThreatListEnabled(context: android.content.Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE).edit().putBoolean(KEY_THREAT_LIST, enabled).apply()
+    }
 
     fun update(block: (ModelStatus) -> ModelStatus) {
         synchronized(this) { mutable.value = block(mutable.value) }

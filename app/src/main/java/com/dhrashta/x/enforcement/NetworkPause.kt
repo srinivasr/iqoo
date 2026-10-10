@@ -58,6 +58,16 @@ object NetworkPause {
         }.isSuccess
     }
 
+    /** Stops DNS-only beacon monitoring. */
+    fun stopDnsMonitor(context: Context): Boolean {
+        return runCatching {
+            ContextCompat.startForegroundService(
+                context,
+                Intent(context, GuardVpnService::class.java).setAction(GuardVpnService.ACTION_STOP_MONITOR),
+            )
+        }.isSuccess
+    }
+
     /**
      * Routes [uid] through the live-inspection relay so its real traffic feeds the network model.
      * Needs VPN consent already granted; returns false otherwise. Paused apps stay paused.

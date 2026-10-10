@@ -39,7 +39,9 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.PathParser
 import android.content.res.Resources
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -103,9 +105,6 @@ fun DashboardScreen(
                         color = Ink,
                         modifier = Modifier.weight(1f).padding(start = 10.dp),
                     )
-                    Box(Modifier.size(44.dp).clickable(onClick = onSettings), contentAlignment = Alignment.Center) {
-                        LineIcon(LineIconType.Settings, Modifier.size(23.dp))
-                    }
                 }
                 Spacer(Modifier.height(26.dp))
                 Text(stringResource(R.string.home_title), color = Ink, style = MaterialTheme.typography.headlineMedium)
@@ -358,12 +357,18 @@ private fun RowScope.BottomItem(label: String, icon: LineIconType, selected: Boo
 
 enum class LineIconType { Home, Activity, Settings, Chevron, Back, Speaker, Check }
 
+private val SettingsGearPath: Path by lazy {
+    PathParser().parsePathString(
+        "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+    ).toPath()
+}
+
 @Composable
 fun LineIcon(type: LineIconType, modifier: Modifier = Modifier, color: Color = Ink) {
     val mirror = LocalLayoutDirection.current == LayoutDirection.Rtl &&
         (type == LineIconType.Chevron || type == LineIconType.Back)
     Canvas(modifier) { scale(if (mirror) -1f else 1f, 1f) {
-        val stroke = Stroke(width = 2.1f, cap = StrokeCap.Round)
+        val stroke = Stroke(width = 2.1f, cap = StrokeCap.Round, join = StrokeJoin.Round)
         val w = size.width
         val h = size.height
         when (type) {
@@ -376,10 +381,11 @@ fun LineIcon(type: LineIconType, modifier: Modifier = Modifier, color: Color = I
                 drawPath(p, color, style = stroke)
             }
             LineIconType.Settings -> {
-                drawCircle(color, w * .17f, Offset(w * .5f, h * .5f), style = stroke)
-                repeat(8) { index ->
-                    val angle = Math.PI * index / 4
-                    drawLine(color, Offset((w * .5f + kotlin.math.cos(angle).toFloat() * w * .28f), (h * .5f + kotlin.math.sin(angle).toFloat() * h * .28f)), Offset((w * .5f + kotlin.math.cos(angle).toFloat() * w * .39f), (h * .5f + kotlin.math.sin(angle).toFloat() * h * .39f)), strokeWidth = stroke.width, cap = StrokeCap.Round)
+                val scaleFactor = w / 24f
+                val gearStroke = Stroke(width = stroke.width / scaleFactor, cap = StrokeCap.Round, join = StrokeJoin.Round)
+                scale(scaleFactor, scaleFactor, pivot = Offset.Zero) {
+                    drawCircle(color, 3.2f, Offset(12f, 12f), style = gearStroke)
+                    drawPath(SettingsGearPath, color, style = gearStroke)
                 }
             }
             LineIconType.Chevron -> { drawLine(color, Offset(w * .35f, h * .2f), Offset(w * .65f, h * .5f), strokeWidth = stroke.width, cap = StrokeCap.Round); drawLine(color, Offset(w * .65f, h * .5f), Offset(w * .35f, h * .8f), strokeWidth = stroke.width, cap = StrokeCap.Round) }

@@ -172,7 +172,7 @@ class MainActivity : ComponentActivity() {
         val activity = remember(scores, events, connections, installed) {
             buildActivity(resources, scores, events, connections, labels, packagesByUid, installed.orEmpty())
         }
-        val status = remember(tick, evaluation.monitoring, modelStatus, threatInfo, inspectingUids) {
+        val status = remember(tick, evaluation.monitoring, modelStatus, threatInfo, inspectingUids, sensorCtx) {
             val dnsOn = VpnService.prepare(this) == null && GuardVpnService.dnsMonitorEnabled(applicationContext)
             SettingsStatus(
                 monitoring = evaluation.monitoring,
@@ -240,9 +240,9 @@ class MainActivity : ComponentActivity() {
                 onHome = { destination = Screen.Home },
                 onActivity = { destination = Screen.Activity },
                 onScanNow = ::scanNow,
-                onEnableDnsMonitor = { withVpnConsent { NetworkPause.startDnsMonitor(this) } },
+                onEnableDnsMonitor = ::toggleDnsMonitor,
                 onUsageAccess = { openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS) },
-                onNotifications = ::requestNotifications,
+                onNotifications = ::toggleNotifications,
                 onDecoys = ::toggleDecoys,
                 onSelfTest = ::runSelfTest,
                 onAccessibilitySettings = { GuidedRecovery.openA11ySettings(this) },
@@ -327,6 +327,26 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private fun toggleDnsMonitor() {
+        if (GuardVpnService.dnsMonitorEnabled(this)) {
+            NetworkPause.stopDnsMonitor(this)
+            refresh()
+        } else {
+            withVpnConsent {
+                NetworkPause.startDnsMonitor(this)
+                refresh()
+            }
+        }
+    }
+
+    private fun toggleNotifications() {
+        if (notificationsEnabled()) {
+            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, packageName))
+        } else {
+            requestNotifications()
+        }
+    }
+
     private fun runSelfTest() {
         runCatching {
             startService(Intent(this, DhrashtaForegroundService::class.java).setAction(DhrashtaForegroundService.ACTION_SELF_TEST))
@@ -345,7 +365,9 @@ class MainActivity : ComponentActivity() {
     ): List<CoverageItem> = listOf(
         CoverageItem(
             getString(R.string.cov_sensor),
-            if (SensorStateStore.available) {
+            if (!SensorStateStore.isSensorMonitoringEnabled(this)) {
+                "Sensor monitoring turned off by user"
+            } else if (SensorStateStore.available) {
                 getString(
                     R.string.cov_sensor_detail,
                     getString(motionLabel(sensor.motion)),
@@ -355,28 +377,42 @@ class MainActivity : ComponentActivity() {
             } else {
                 getString(R.string.cov_sensor_waiting)
             },
-            if (SensorStateStore.available) CoverageState.On else CoverageState.NotMonitored,
+            if (SensorStateStore.isSensorMonitoringEnabled(this) && SensorStateStore.available) CoverageState.On else CoverageState.Off,
+            onToggle = {
+                val next = !SensorStateStore.isSensorMonitoringEnabled(this)
+                SensorStateStore.setSensorMonitoringEnabled(this, next)
+                refresh()
+            },
         ),
         CoverageItem(
             getString(R.string.cov_btexfil),
-            if (!SensorStateStore.available) {
+            if (!SensorStateStore.isBtWatchEnabled(this)) {
+                "Offline exfiltration watch turned off by user"
+            } else if (!SensorStateStore.available) {
                 getString(R.string.cov_btexfil_idle)
             } else if (sensor.offline && sensor.bluetoothOn) {
                 getString(R.string.cov_btexfil_risk)
             } else {
                 getString(R.string.cov_btexfil_ok)
             },
-            if (sensor.offline && sensor.bluetoothOn) CoverageState.Off else CoverageState.On,
+            if (SensorStateStore.isBtWatchEnabled(this) && !(sensor.offline && sensor.bluetoothOn)) CoverageState.On else CoverageState.Off,
+            onToggle = {
+                val next = !SensorStateStore.isBtWatchEnabled(this)
+                SensorStateStore.setBtWatchEnabled(this, next)
+                refresh()
+            },
         ),
         CoverageItem(
             getString(R.string.cov_a11y),
             getString(R.string.cov_a11y_detail),
             if (monitoring) CoverageState.On else CoverageState.Off,
+            onToggle = { GuidedRecovery.openA11ySettings(this) },
         ),
         CoverageItem(
             getString(R.string.cov_dns),
             getString(R.string.cov_dns_detail),
             if (dnsOn) CoverageState.On else CoverageState.Off,
+            onToggle = ::toggleDnsMonitor,
         ),
         CoverageItem(
             getString(R.string.cov_traffic),
@@ -387,15 +423,19 @@ class MainActivity : ComponentActivity() {
             getString(R.string.cov_bank),
             getString(R.string.cov_bank_detail),
             if (UsageWatcher.hasUsageAccess(applicationContext)) CoverageState.On else CoverageState.Off,
+            onToggle = { openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS) },
         ),
         CoverageItem(
             getString(R.string.cov_decoys),
             getString(R.string.cov_decoys_detail),
             if (CanaryManager.isEnabled(applicationContext)) CoverageState.On else CoverageState.Off,
+            onToggle = ::toggleDecoys,
         ),
         CoverageItem(
             getString(R.string.cov_netmodel),
-            if (model.networkLoaded) {
+            if (!ModelStatusStore.isNetModelEnabled(this)) {
+                "Model inference turned off by user"
+            } else if (model.networkLoaded) {
                 getString(
                     R.string.cov_netmodel_detail,
                     model.networkBackend.orEmpty(),
@@ -404,11 +444,18 @@ class MainActivity : ComponentActivity() {
             } else {
                 getString(R.string.cov_model_missing)
             },
-            if (model.networkLoaded && model.networkSelfTestPassed == true) CoverageState.On else CoverageState.Off,
+            if (ModelStatusStore.isNetModelEnabled(this) && model.networkLoaded && model.networkSelfTestPassed == true) CoverageState.On else CoverageState.Off,
+            onToggle = {
+                val next = !ModelStatusStore.isNetModelEnabled(this)
+                ModelStatusStore.setNetModelEnabled(this, next)
+                refresh()
+            },
         ),
         CoverageItem(
             getString(R.string.cov_netmodel_live),
-            if (model.liveLoaded) {
+            if (!ModelStatusStore.isLiveModelEnabled(this)) {
+                "Live network analysis turned off by user"
+            } else if (model.liveLoaded) {
                 getString(
                     R.string.cov_netmodel_live_detail_on,
                     watched,
@@ -418,15 +465,18 @@ class MainActivity : ComponentActivity() {
             } else {
                 getString(R.string.cov_model_missing)
             },
-            when {
-                model.liveLoaded && watched > 0 && model.liveSelfTestPassed == true -> CoverageState.On
-                model.liveLoaded -> CoverageState.Off
-                else -> CoverageState.Off
+            if (ModelStatusStore.isLiveModelEnabled(this) && model.liveLoaded) CoverageState.On else CoverageState.Off,
+            onToggle = {
+                val next = !ModelStatusStore.isLiveModelEnabled(this)
+                ModelStatusStore.setLiveModelEnabled(this, next)
+                refresh()
             },
         ),
         CoverageItem(
             getString(R.string.cov_static),
-            if (model.staticLoaded) {
+            if (!ModelStatusStore.isStaticModelEnabled(this)) {
+                "Static APK scan turned off by user"
+            } else if (model.staticLoaded) {
                 val progress = model.staticProgress?.let { (done, total) -> getString(R.string.static_scanning, done, total) }
                 getString(
                     R.string.cov_static_detail,
@@ -437,18 +487,43 @@ class MainActivity : ComponentActivity() {
             } else {
                 getString(R.string.cov_static_missing)
             },
-            if (model.staticLoaded && model.staticSelfTestPassed == true) CoverageState.On else CoverageState.Off,
+            if (ModelStatusStore.isStaticModelEnabled(this) && model.staticLoaded && model.staticSelfTestPassed == true) CoverageState.On else CoverageState.Off,
+            onToggle = {
+                val next = !ModelStatusStore.isStaticModelEnabled(this)
+                ModelStatusStore.setStaticModelEnabled(this, next)
+                refresh()
+            },
         ),
         CoverageItem(
             getString(R.string.cov_a11ymodel),
-            if (model.a11yModelLoaded) model.a11yBackend.orEmpty() else getString(R.string.cov_a11ymodel_missing),
-            if (model.a11yModelLoaded) CoverageState.On else CoverageState.Off,
+            if (!ModelStatusStore.isA11yModelEnabled(this)) {
+                "Accessibility model turned off by user"
+            } else if (model.a11yModelLoaded) {
+                model.a11yBackend.orEmpty()
+            } else {
+                getString(R.string.cov_a11ymodel_missing)
+            },
+            if (ModelStatusStore.isA11yModelEnabled(this)) CoverageState.On else CoverageState.Off,
+            onToggle = {
+                val next = !ModelStatusStore.isA11yModelEnabled(this)
+                ModelStatusStore.setA11yModelEnabled(this, next)
+                refresh()
+            },
         ),
         CoverageItem(
             getString(R.string.cov_threats),
-            threats?.takeIf { it.entries > 0 }?.let { getString(R.string.cov_threats_detail, it.entries, it.source) }
-                ?: getString(R.string.cov_threats_none),
-            if ((threats?.entries ?: 0) > 0) CoverageState.On else CoverageState.Off,
+            if (!ModelStatusStore.isThreatListEnabled(this)) {
+                "Threat intelligence feed turned off by user"
+            } else {
+                threats?.takeIf { it.entries > 0 }?.let { getString(R.string.cov_threats_detail, it.entries, it.source) }
+                    ?: getString(R.string.cov_threats_none)
+            },
+            if (ModelStatusStore.isThreatListEnabled(this) && (threats?.entries ?: 0) > 0) CoverageState.On else CoverageState.Off,
+            onToggle = {
+                val next = !ModelStatusStore.isThreatListEnabled(this)
+                ModelStatusStore.setThreatListEnabled(this, next)
+                refresh()
+            },
         ),
     )
 

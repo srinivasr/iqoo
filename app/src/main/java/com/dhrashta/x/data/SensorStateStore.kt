@@ -24,12 +24,37 @@ data class SensorContext(
 )
 
 object SensorStateStore {
+    private const val PREFS = "dhrashta_sensors"
+    private const val KEY_SENSORS_ENABLED = "sensors_enabled"
+    private const val KEY_BT_WATCH_ENABLED = "bt_watch_enabled"
+
     private val mutable = MutableStateFlow(SensorContext())
     val state = mutable.asStateFlow()
 
-    /** True once we have a real reading (an accelerometer sample has been processed). */
     @Volatile var available: Boolean = false
         private set
+
+    fun isSensorMonitoringEnabled(context: android.content.Context): Boolean =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+            .getBoolean(KEY_SENSORS_ENABLED, true)
+
+    fun setSensorMonitoringEnabled(context: android.content.Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_SENSORS_ENABLED, enabled).apply()
+        if (!enabled) {
+            available = false
+            mutable.value = mutable.value.copy(motion = MotionState.UNKNOWN)
+        }
+    }
+
+    fun isBtWatchEnabled(context: android.content.Context): Boolean =
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+            .getBoolean(KEY_BT_WATCH_ENABLED, true)
+
+    fun setBtWatchEnabled(context: android.content.Context, enabled: Boolean) {
+        context.getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
+            .edit().putBoolean(KEY_BT_WATCH_ENABLED, enabled).apply()
+    }
 
     fun update(context: SensorContext) {
         mutable.value = context

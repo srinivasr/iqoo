@@ -56,7 +56,12 @@ import com.dhrashta.x.ui.theme.Surface
 enum class CoverageState { On, Off, NotMonitored }
 
 /** One row of the "What is monitored" card. Everything here is read from live state. */
-data class CoverageItem(val title: String, val detail: String, val state: CoverageState)
+data class CoverageItem(
+    val title: String,
+    val detail: String,
+    val state: CoverageState,
+    val onToggle: (() -> Unit)? = null,
+)
 
 /** Live status of every sensor and permission the Settings tab shows. */
 data class SettingsStatus(
@@ -150,15 +155,40 @@ fun SettingsScreen(
             Spacer(Modifier.height(12.dp))
             QuietCard(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(horizontal = 16.dp)) {
-                    SettingRow(R.string.set_a11y_title, R.string.set_a11y_detail, status.monitoring, R.string.set_starting, null)
+                    SettingRow(
+                        title = R.string.set_a11y_title,
+                        detail = R.string.set_a11y_detail,
+                        on = status.monitoring,
+                        onToggle = onAccessibilitySettings,
+                    )
                     HorizontalDivider(color = Line)
-                    SettingRow(R.string.set_dns_title, R.string.set_dns_detail, status.vpnConsent && status.dnsMonitor, R.string.set_turn_on, onEnableDnsMonitor)
+                    SettingRow(
+                        title = R.string.set_dns_title,
+                        detail = R.string.set_dns_detail,
+                        on = status.vpnConsent && status.dnsMonitor,
+                        onToggle = onEnableDnsMonitor,
+                    )
                     HorizontalDivider(color = Line)
-                    SettingRow(R.string.set_bank_title, R.string.set_bank_detail, status.usageAccess, R.string.set_allow, onUsageAccess)
+                    SettingRow(
+                        title = R.string.set_bank_title,
+                        detail = R.string.set_bank_detail,
+                        on = status.usageAccess,
+                        onToggle = onUsageAccess,
+                    )
                     HorizontalDivider(color = Line)
-                    SettingRow(R.string.set_decoy_title, R.string.set_decoy_detail, status.decoys, R.string.set_turn_on, onDecoys, offAction = onDecoys)
+                    SettingRow(
+                        title = R.string.set_decoy_title,
+                        detail = R.string.set_decoy_detail,
+                        on = status.decoys,
+                        onToggle = onDecoys,
+                    )
                     HorizontalDivider(color = Line)
-                    SettingRow(R.string.set_alerts_title, R.string.set_alerts_detail, status.notifications, R.string.set_allow, onNotifications)
+                    SettingRow(
+                        title = R.string.set_alerts_title,
+                        detail = R.string.set_alerts_detail,
+                        on = status.notifications,
+                        onToggle = onNotifications,
+                    )
                 }
             }
             Text(
@@ -207,21 +237,39 @@ fun SettingsScreen(
                 Column(Modifier.padding(horizontal = 16.dp)) {
                     status.coverage.forEachIndexed { index, item ->
                         if (index > 0) HorizontalDivider(color = Line)
-                        Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Row(
+                            Modifier.fillMaxWidth()
+                                .then(if (item.onToggle != null) Modifier.clickable(onClick = item.onToggle) else Modifier)
+                                .padding(vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
                             Column(Modifier.weight(1f).padding(end = 12.dp)) {
                                 Text(item.title, style = MaterialTheme.typography.titleMedium)
                                 Text(item.detail, color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
                             }
-                            StatusPill(
-                                stringResource(
-                                    when (item.state) {
-                                        CoverageState.On -> R.string.set_on
-                                        CoverageState.Off -> R.string.cov_off
-                                        CoverageState.NotMonitored -> R.string.cov_not_monitored
-                                    },
-                                ),
-                                item.state == CoverageState.On,
-                            )
+                            if (item.onToggle != null && (item.state == CoverageState.On || item.state == CoverageState.Off)) {
+                                androidx.compose.material3.Switch(
+                                    checked = item.state == CoverageState.On,
+                                    onCheckedChange = { item.onToggle.invoke() },
+                                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                                        checkedThumbColor = Canvas,
+                                        checkedTrackColor = Forest,
+                                        uncheckedThumbColor = MutedInk,
+                                        uncheckedTrackColor = Line,
+                                    ),
+                                )
+                            } else {
+                                StatusPill(
+                                    stringResource(
+                                        when (item.state) {
+                                            CoverageState.On -> R.string.set_on
+                                            CoverageState.Off -> R.string.cov_off
+                                            CoverageState.NotMonitored -> R.string.cov_not_monitored
+                                        },
+                                    ),
+                                    item.state == CoverageState.On,
+                                )
+                            }
                         }
                     }
                 }
@@ -258,40 +306,26 @@ private fun SettingRow(
     title: Int,
     detail: Int,
     on: Boolean,
-    actionLabel: Int,
-    onAction: (() -> Unit)?,
-    offAction: (() -> Unit)? = null,
+    onToggle: () -> Unit,
 ) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 14.dp), verticalAlignment = Alignment.CenterVertically) {
+    Row(
+        Modifier.fillMaxWidth().clickable(onClick = onToggle).padding(vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
         Column(Modifier.weight(1f).padding(end = 12.dp)) {
             Text(stringResource(title), style = MaterialTheme.typography.titleMedium)
             Text(stringResource(detail), color = MutedInk, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(top = 2.dp))
         }
-        if (on && offAction != null) {
-            Column(horizontalAlignment = Alignment.End) {
-                StatusPill(stringResource(R.string.set_on), true)
-                Text(
-                    stringResource(R.string.set_turn_off),
-                    color = Accent,
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 13.sp,
-                    modifier = Modifier.clickable(onClick = offAction).padding(top = 6.dp),
-                )
-            }
-        } else if (on || onAction == null) {
-            StatusPill(stringResource(if (on) R.string.set_on else actionLabel), on)
-        } else {
-            Text(
-                stringResource(actionLabel),
-                color = Canvas,
-                fontWeight = FontWeight.SemiBold,
-                fontSize = 13.sp,
-                modifier = Modifier
-                    .background(Accent, RoundedCornerShape(6.dp))
-                    .clickable(onClick = onAction)
-                    .padding(horizontal = 12.dp, vertical = 7.dp),
-            )
-        }
+        androidx.compose.material3.Switch(
+            checked = on,
+            onCheckedChange = { onToggle() },
+            colors = androidx.compose.material3.SwitchDefaults.colors(
+                checkedThumbColor = Canvas,
+                checkedTrackColor = Forest,
+                uncheckedThumbColor = MutedInk,
+                uncheckedTrackColor = Line,
+            ),
+        )
     }
 }
 
