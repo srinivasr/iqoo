@@ -94,9 +94,11 @@ fun SettingsScreen(
     onSelfTest: () -> Unit,
     onAccessibilitySettings: () -> Unit,
     onChangeLanguage: () -> Unit,
-    onPolicies: () -> Unit = {},
     onUntrust: (String) -> Unit,
     onOpenApp: (String) -> Unit,
+    autoContain: Boolean = false,
+    onAutoContainChange: (Boolean) -> Unit = {},
+    onPolicies: () -> Unit = {},
 ) {
     BackHandler(onBack = onHome)
     Column(Modifier.fillMaxSize().background(Canvas)) {
@@ -231,6 +233,13 @@ fun SettingsScreen(
                         on = status.notifications,
                         onToggle = onNotifications,
                     )
+                    HorizontalDivider(color = Line)
+                    SettingRow(
+                        title = R.string.set_auto_contain_title,
+                        detail = R.string.set_auto_contain_detail,
+                        on = autoContain,
+                        onToggle = { onAutoContainChange(!autoContain) },
+                    )
                 }
             }
             Text(
@@ -336,7 +345,7 @@ fun SettingsScreen(
                     Column(Modifier.weight(1f)) {
                         Text("Terms, Policies & Permissions", style = MaterialTheme.typography.titleMedium)
                         Text(
-                            "Zero-telemetry audit, DPDP Act compliance & permission rationale for judges",
+                            "Zero-telemetry audit, DPDP Act 2023 compliance & permission transparency",
                             color = MutedInk,
                             style = MaterialTheme.typography.bodyMedium,
                             modifier = Modifier.padding(top = 2.dp),
@@ -359,6 +368,17 @@ fun SettingsScreen(
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(stringResource(R.string.about_version, BuildConfig.VERSION_NAME), style = MaterialTheme.typography.titleMedium)
                     Text(stringResource(R.string.about_text), color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                    HorizontalDivider(color = Line, modifier = Modifier.padding(vertical = 8.dp))
+                    Row(
+                        Modifier.fillMaxWidth().clickable(onClick = onPolicies).padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(Modifier.weight(1f)) {
+                            Text(stringResource(R.string.set_privacy_policy), style = MaterialTheme.typography.titleSmall, color = Accent)
+                            Text(stringResource(R.string.set_privacy_policy_detail), color = MutedInk, style = MaterialTheme.typography.bodySmall)
+                        }
+                        Chevron()
+                    }
                 }
             }
             Spacer(Modifier.height(24.dp))

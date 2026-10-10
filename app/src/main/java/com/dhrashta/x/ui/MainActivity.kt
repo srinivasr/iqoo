@@ -42,7 +42,12 @@ import com.dhrashta.x.data.ModelStatusStore
 import com.dhrashta.x.data.MotionState
 import com.dhrashta.x.data.SensorStateStore
 import com.dhrashta.x.data.StaticScanStore
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.res.stringResource
 import com.dhrashta.x.data.LiveNetworkStore
+import com.dhrashta.x.data.SecuritySettingsStore
 import com.dhrashta.x.decision.ThreatList
 import com.dhrashta.x.data.AppLanguage
 import com.dhrashta.x.data.EvaluationStateStore
@@ -69,17 +74,13 @@ class MainActivity : ComponentActivity() {
     private var refreshTick by mutableIntStateOf(0)
     private var resumedOnce = false
     private var pendingVpnAction: (() -> Unit)? = null
+    private var showVpnDisclosure by mutableStateOf(false)
+    private var showUsageDisclosure by mutableStateOf(false)
     private var tts: TextToSpeech? = null
     private var ttsReady = false
     private var isSpeaking by mutableStateOf(false)
 
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
-    // Decoys are opt-in: this launcher runs only after the user taps "Turn on" for decoys. If the
-    // contacts permission is denied, the non-contact decoys are still planted.
-    private val contactsPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {
-        CanaryManager.setEnabled(this, true)
-        refresh()
-    }
     private val vpnPermission = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val action = pendingVpnAction
         pendingVpnAction = null
@@ -230,6 +231,61 @@ class MainActivity : ComponentActivity() {
             if (selected != null && apps != null && risk == null) destination = Screen.Home
         }
 
+        if (showVpnDisclosure) {
+            AlertDialog(
+                onDismissRequest = {
+                    showVpnDisclosure = false
+                    pendingVpnAction = null
+                },
+                title = { Text(stringResource(R.string.disclosure_vpn_title)) },
+                text = { Text(stringResource(R.string.disclosure_vpn_body)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showVpnDisclosure = false
+                        val consent = VpnService.prepare(this@MainActivity)
+                        if (consent != null) {
+                            vpnPermission.launch(consent)
+                        } else {
+                            val action = pendingVpnAction
+                            pendingVpnAction = null
+                            action?.invoke()
+                        }
+                    }) {
+                        Text(stringResource(R.string.disclosure_btn_continue))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = {
+                        showVpnDisclosure = false
+                        pendingVpnAction = null
+                    }) {
+                        Text(stringResource(R.string.disclosure_btn_cancel))
+                    }
+                },
+            )
+        }
+
+        if (showUsageDisclosure) {
+            AlertDialog(
+                onDismissRequest = { showUsageDisclosure = false },
+                title = { Text(stringResource(R.string.disclosure_usage_title)) },
+                text = { Text(stringResource(R.string.disclosure_usage_body)) },
+                confirmButton = {
+                    TextButton(onClick = {
+                        showUsageDisclosure = false
+                        openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS)
+                    }) {
+                        Text(stringResource(R.string.disclosure_btn_continue))
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showUsageDisclosure = false }) {
+                        Text(stringResource(R.string.disclosure_btn_cancel))
+                    }
+                },
+            )
+        }
+
         when (screen) {
             is Screen.Policies -> PolicyScreen(
                 onboarding = screen.onboarding,
@@ -285,15 +341,20 @@ class MainActivity : ComponentActivity() {
                 onActivity = { destination = Screen.Activity },
                 onScanNow = ::scanNow,
                 onEnableDnsMonitor = ::toggleDnsMonitor,
-                onUsageAccess = { openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS) },
+                onUsageAccess = { showUsageDisclosure = true },
                 onNotifications = ::toggleNotifications,
                 onDecoys = ::toggleDecoys,
                 onSelfTest = ::runSelfTest,
                 onAccessibilitySettings = { GuidedRecovery.openA11ySettings(this) },
                 onChangeLanguage = { destination = Screen.Language(firstRun = false) },
-                onPolicies = { destination = Screen.Policies(onboarding = false) },
                 onUntrust = { pkg -> setTrusted(pkg, false) },
                 onOpenApp = { destination = Screen.Details(it) },
+                autoContain = SecuritySettingsStore.isAutoContainmentEnabled(this),
+                onAutoContainChange = { enabled ->
+                    SecuritySettingsStore.setAutoContainmentEnabled(this, enabled)
+                    refresh()
+                },
+                onPolicies = { destination = Screen.Policies(onboarding = false) },
             )
             is Screen.Details -> if (risk == null) {
                 LoadingCard(getString(R.string.loading_app))
@@ -365,13 +426,11 @@ class MainActivity : ComponentActivity() {
         if (CanaryManager.isEnabled(this)) {
             CanaryManager.setEnabled(this, false)
             toast(getString(R.string.toast_decoys_off))
-            refresh()
-        } else if (ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_CONTACTS) == PackageManager.PERMISSION_GRANTED) {
-            CanaryManager.setEnabled(this, true)
-            refresh()
         } else {
-            contactsPermission.launch(Manifest.permission.WRITE_CONTACTS)
+            CanaryManager.setEnabled(this, true)
+            toast(getString(R.string.toast_decoys_on))
         }
+        refresh()
     }
 
     private fun toggleDnsMonitor() {
@@ -470,7 +529,7 @@ class MainActivity : ComponentActivity() {
             getString(R.string.cov_bank),
             getString(R.string.cov_bank_detail),
             if (UsageWatcher.hasUsageAccess(applicationContext)) CoverageState.On else CoverageState.Off,
-            onToggle = { openSettings(Settings.ACTION_USAGE_ACCESS_SETTINGS) },
+            onToggle = { showUsageDisclosure = true },
         ),
         CoverageItem(
             getString(R.string.cov_decoys),
@@ -594,14 +653,14 @@ class MainActivity : ComponentActivity() {
         refresh()
     }
 
-    /** Runs [action] once VPN consent exists, asking for it first if needed. */
+    /** Runs [action] once VPN consent exists, asking for it first if needed with prominent disclosure. */
     private fun withVpnConsent(action: () -> Unit) {
         val consent = VpnService.prepare(this)
         if (consent == null) {
             action()
         } else {
             pendingVpnAction = action
-            vpnPermission.launch(consent)
+            showVpnDisclosure = true
         }
     }
 

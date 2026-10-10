@@ -24,6 +24,7 @@ import com.dhrashta.x.data.AudioSettingsStore
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.data.ModelStatusStore
+import com.dhrashta.x.data.SecuritySettingsStore
 import com.dhrashta.x.data.StaticScanStore
 import com.dhrashta.x.data.StaticVerdict
 import com.dhrashta.x.decision.CausalChains
@@ -396,7 +397,9 @@ class DhrashtaForegroundService : Service() {
             )
             EventLogger.recordRisk(pkg, result.score, result.band.name)
             EventLogger.recordSignals(pkg, result)
+            val autoContain = SecuritySettingsStore.isAutoContainmentEnabled(this)
             val contained = result.action == TrustPolicy.Action.CONTAIN &&
+                autoContain &&
                 NetworkPause.pauseAndConfirm(this, identity.uid)
             val explanation = Explanations.build(this, identity.appLabel, result, matchedChains)
             EvaluationStateStore.update {
@@ -413,6 +416,7 @@ class DhrashtaForegroundService : Service() {
                     trusted = trusted,
                     message = when {
                         contained -> "Critical risk contained; network access paused"
+                        result.action == TrustPolicy.Action.CONTAIN && !autoContain -> "Critical risk found; review recommended"
                         result.action == TrustPolicy.Action.CONTAIN -> "Critical risk found; containment could not be confirmed (VPN permission or package mapping)"
                         trusted -> "Evaluation complete (trusted app: no automatic action)"
                         else -> "Evaluation complete"

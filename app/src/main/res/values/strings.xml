@@ -267,6 +267,7 @@
     <string name="set_selftest">Run model self-test</string>
     <string name="set_turn_off">Turn off</string>
     <string name="toast_pausing">Pausing %1$s…</string>
+    <string name="toast_decoys_on">Decoys active</string>
     <string name="toast_decoys_off">Decoys removed</string>
     <string name="toast_selftest">Running model self-test…</string>
     <string name="ev_canary_title">Tried to send decoy data</string>
@@ -274,7 +275,7 @@
     <string name="act_canary">%1$s tried to send decoy data (blocked)</string>
     <string name="explain_trusted">You marked %1$s as trusted, so DHRASHTA-X does not pause it or alert about it. Its evidence score is still shown.</string>
     <string name="set_decoy_title">Decoy data (optional)</string>
-    <string name="set_decoy_detail">Plants a fake contact and fake values that no honest app should send. Off by default; turning it off removes them.</string>
+    <string name="set_decoy_detail">Plants decoy security tokens that no honest app should send. Off by default; turning it off removes them.</string>
     <string name="expl_sig_s0_high">the on-device static model found that its code and manifest closely resemble banking-trojan / RAT samples</string>
     <string name="expl_sig_s0_medium">the on-device static model found some code and manifest traits shared with banking-trojan / RAT samples</string>
     <string name="ev_static_title">Static app scan (on-device ML)</string>
@@ -366,4 +367,17 @@
     <string name="action_share_report">Share Incident Report</string>
     <string name="share_report_title">Share Security Report</string>
     <string name="critical_alert_spoken">Security alert. %1$s was flagged as a critical threat and network access was paused.</string>
+    <!-- Google Play Compliance & Disclosures -->
+    <string name="disclosure_vpn_title">Local Firewall &amp; Network Protection</string>
+    <string name="disclosure_vpn_body">DHRASHTA-X uses Android’s VpnService to create a local, on-device network filter. This is used solely to:\n\n• Black-hole outbound traffic from confirmed malicious apps (network quarantine)\n• Monitor DNS lookups to detect periodic command-and-control beaconing\n\nNo traffic is routed through remote proxy servers. All inspection and filtering occurs strictly on your device.</string>
+    <string name="disclosure_usage_title">Usage Access Disclosure</string>
+    <string name="disclosure_usage_body">DHRASHTA-X inspects app foreground transitions locally to detect when financial or banking apps are opened.\n\nThis is used exclusively to prevent accessibility hijacking and screen overlays during sensitive banking tasks. No app usage history or personal data is collected or transmitted off your device.</string>
+    <string name="disclosure_btn_continue">Continue</string>
+    <string name="disclosure_btn_cancel">Not Now</string>
+    <string name="set_auto_contain_title">Automatic Threat Containment</string>
+    <string name="set_auto_contain_detail">Automatically pause internet access when a critical security threat is identified on-device.</string>
+    <string name="set_privacy_policy">Privacy Policy</string>
+    <string name="set_privacy_policy_detail">Zero-cloud telemetry and on-device processing guarantees</string>
+    <string name="dialog_close">Close</string>
+    <string name="privacy_policy_body">DHRASHTA-X operates on a strict zero-cloud, zero-telemetry architecture.\n\n• Zero Data Leaves Device: All behavioral telemetry, risk scoring, machine learning inference, and packet inspection run 100% on-device.\n• No External Servers: DHRASHTA-X does not operate analytics, crash tracking, or user telemetry servers.\n• Permissions: QUERY_ALL_PACKAGES, Usage Access, and local VpnService are used strictly for local threat scanning and malware quarantine.\n• Storage: All event history and trust preferences remain in your private device database.\n\nContact: privacy@dhrashta.com</string>
 </resources>

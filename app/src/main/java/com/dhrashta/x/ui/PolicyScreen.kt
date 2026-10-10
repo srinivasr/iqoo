@@ -1,7 +1,6 @@
 package com.dhrashta.x.ui
 
 import androidx.activity.compose.BackHandler
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -15,10 +14,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
@@ -34,31 +31,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.dhrashta.x.R
 import com.dhrashta.x.ui.components.PrimaryAction
 import com.dhrashta.x.ui.components.QuietCard
 import com.dhrashta.x.ui.components.ScreenPadding
-import com.dhrashta.x.ui.theme.Accent
-import com.dhrashta.x.ui.theme.AccentSoft
 import com.dhrashta.x.ui.theme.Canvas
-import com.dhrashta.x.ui.theme.Forest
-import com.dhrashta.x.ui.theme.ForestSoft
 import com.dhrashta.x.ui.theme.Ink
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 import com.dhrashta.x.ui.theme.Surface
+import com.dhrashta.x.ui.theme.SurfaceRaised
 
 enum class PolicyType { DPDP, STORAGE, CONTAINMENT, DECOY, EXPLAINABILITY }
 
 data class PolicyItem(
     val type: PolicyType,
-    val category: String,
+    val clauseNumber: String,
+    val statutoryRef: String,
     val title: String,
     val guarantee: String,
     val details: String,
@@ -67,7 +61,7 @@ data class PolicyItem(
 data class PermissionRationale(
     val permissionName: String,
     val humanTitle: String,
-    val statusTag: String,
+    val scopeTag: String,
     val rationale: String,
     val mechanism: String,
 )
@@ -87,35 +81,40 @@ fun PolicyScreen(
         listOf(
             PolicyItem(
                 type = PolicyType.DPDP,
-                category = "DPDP ACT 2023 · DATA MINIMISATION",
+                clauseNumber = "SECTION 1",
+                statutoryRef = "DPDP ACT 2023 · DATA MINIMISATION",
                 title = "100% On-Device Processing Guarantee",
-                guarantee = "Zero Cloud Telemetry. No personal files, network packets, or device logs ever leave this phone.",
+                guarantee = "Zero Cloud Telemetry. No telemetry, personal files, network packets, or device logs are ever transmitted off this device.",
                 details = "All risk evaluations, application inspections, and behavioral scoring execute strictly in local memory without communicating with any external servers. Fully compliant with Sections 6 and 7 of India's Digital Personal Data Protection Act (DPDP Act 2023).",
             ),
             PolicyItem(
                 type = PolicyType.STORAGE,
-                category = "DATA RETENTION · STORAGE LIMITATION",
+                clauseNumber = "SECTION 2",
+                statutoryRef = "DATA RETENTION · STORAGE LIMITATION",
                 title = "Automated 7-Day Storage Purge",
                 guarantee = "Diagnostic and event logs are strictly rolling and permanently deleted after 7 days.",
                 details = "Security event records and connection metadata are stored strictly in private, sandboxed local application storage. An automated background worker permanently removes records older than 7 days to eliminate persistent storage accumulation.",
             ),
             PolicyItem(
                 type = PolicyType.CONTAINMENT,
-                category = "TARGETED DEFENSE · SAFETY",
+                clauseNumber = "SECTION 3",
+                statutoryRef = "TARGETED DEFENSE · SAFETY",
                 title = "Surgical Per-Application Network Isolation",
                 guarantee = "Isolation targets only the rogue application; general device internet connectivity remains uninterrupted.",
                 details = "When critical unauthorized behavior is identified, containment isolates network access strictly for that offending application package. All other applications, phone calls, and internet services continue operating normally without requiring root privileges.",
             ),
             PolicyItem(
                 type = PolicyType.DECOY,
-                category = "USER CONTROL · ETHICAL TESTING",
-                title = "Opt-In Decoy Traps",
-                guarantee = "Decoy markers are disabled by default and completely wiped upon toggle.",
-                details = "An optional synthetic address book entry ('Security Verification Contact') monitors whether untrusted applications attempt unauthorized background exfiltration. Decoys require explicit user activation and are immediately removed if toggled off in Settings.",
+                clauseNumber = "SECTION 4",
+                statutoryRef = "USER CONTROL · ETHICAL TESTING",
+                title = "Zero-Permission Decoy Honeypots",
+                guarantee = "Decoy markers are completely sandboxed on-device and wiped upon toggle.",
+                details = "Sandboxed local honeytokens (isolated private preferences UUID and credential markers) detect unauthorized background credential and device exfiltration attempts without requiring access to contacts or personal data.",
             ),
             PolicyItem(
                 type = PolicyType.EXPLAINABILITY,
-                category = "TRANSPARENCY · MULTI-LANGUAGE",
+                clauseNumber = "SECTION 5",
+                statutoryRef = "TRANSPARENCY · MULTI-LANGUAGE",
                 title = "Transparent Behavioral Evidence",
                 guarantee = "Every risk evaluation is backed by visible factors with 13 Indian language translations.",
                 details = "All threat assessments present concrete, auditable factors—such as hidden launcher icons, unauthorized background overlays, or unsigned certificates—available in English and 12 regional Indian languages with optional voice assistance.",
@@ -128,42 +127,35 @@ fun PolicyScreen(
             PermissionRationale(
                 permissionName = "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
                 humanTitle = "Continuous System Protection Service",
-                statusTag = "SYSTEM SERVICE",
+                scopeTag = "SYSTEM FOREGROUND SERVICE",
                 rationale = "Maintains background security evaluation of newly installed apps and accessibility permission modifications without system termination.",
                 mechanism = "Operates an Android Foreground Service with a transparent status notification.",
             ),
             PermissionRationale(
                 permissionName = "android.net.VpnService (BIND_VPN_SERVICE)",
                 humanTitle = "Local Traffic Isolation & Inspection",
-                statusTag = "LOCAL GATEWAY",
-                rationale = "Enables on-device packet inspection to detect command-and-control beaconing and isolates rogue apps locally without connecting to external VPN servers.",
-                mechanism = "Utilizes Android's local TUN interface; loops traffic strictly inside the device.",
+                scopeTag = "LOCAL TUN INTERFACE ONLY",
+                rationale = "Enables on-device packet inspection to detect command-and-control beaconing and isolates rogue apps locally without connecting to external VPN proxy servers.",
+                mechanism = "Utilizes Android local TUN interface; loops traffic strictly inside the device.",
             ),
             PermissionRationale(
                 permissionName = "android.permission.PACKAGE_USAGE_STATS",
                 humanTitle = "Application Usage & Overlay Verification",
-                statusTag = "USAGE ACCESS",
+                scopeTag = "LOCAL USAGE STATS",
                 rationale = "Detects when sensitive banking, payment, and government apps are brought to the foreground, preventing fraudulent background overlays from stealing credentials.",
                 mechanism = "Queries standard Android UsageStats events for active window transitions.",
             ),
             PermissionRationale(
                 permissionName = "android.permission.QUERY_ALL_PACKAGES",
                 humanTitle = "Installed Application Inventory",
-                statusTag = "SECURITY AUDIT",
+                scopeTag = "LOCAL PACKAGE MANAGER",
                 rationale = "Audits installed packages to verify developer signing certificates against known threat registries, identify sideloaded apps, and detect hidden applications.",
                 mechanism = "Inspects package metadata and signatures locally via Android PackageManager.",
             ),
             PermissionRationale(
-                permissionName = "android.permission.WRITE_CONTACTS (Optional)",
-                humanTitle = "Decoy Marker Placement",
-                statusTag = "OPT-IN DEFENSE",
-                rationale = "Plants a single synthetic contact marker to trap spyware and trojans attempting unauthorized address book exfiltration.",
-                mechanism = "Disabled by default. Toggled explicitly by the user, and immediately deleted upon disabling.",
-            ),
-            PermissionRationale(
                 permissionName = "android.permission.POST_NOTIFICATIONS",
                 humanTitle = "Critical Security Alerts",
-                statusTag = "NOTIFICATIONS",
+                scopeTag = "LOCAL NOTIFICATIONS",
                 rationale = "Delivers immediate alerts to the user when high-risk behaviors or containment actions require user attention.",
                 mechanism = "Dispatches alerts locally via the Android NotificationManager.",
             ),
@@ -183,99 +175,78 @@ fun PolicyScreen(
             item {
                 Spacer(Modifier.height(16.dp))
                 if (onBack != null) {
-                    ScreenHeader(stringResource(R.string.cd_back), onBack)
-                    Spacer(Modifier.height(10.dp))
+                    ScreenHeader(stringResource(R.string.set_privacy_policy), onBack)
+                    Spacer(Modifier.height(14.dp))
                 } else {
                     Spacer(Modifier.height(20.dp))
                 }
 
-                // Clean Executive Brand Header
-                Box(
+                // Formal Institutional Document Header
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(Surface)
-                        .border(1.dp, Line, RoundedCornerShape(16.dp))
-                        .padding(20.dp),
-                    contentAlignment = Alignment.Center,
+                        .padding(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    Text(
+                        text = "LEGAL & COMPLIANCE SPECIFICATION",
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.2.sp,
+                        color = MutedInk,
+                    )
+                    Text(
+                        text = "Data Privacy Charter",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Ink,
+                    )
+                    Text(
+                        text = "DHRASHTA-X operates on an air-gapped zero-cloud architecture. Security evaluation, heuristic analysis, and mitigation mechanisms execute strictly on-device without telemetry dispatch.",
+                        fontSize = 13.sp,
+                        color = MutedInk,
+                        lineHeight = 19.sp,
+                        modifier = Modifier.padding(top = 2.dp),
+                    )
+                }
+
+                // Institutional Metadata Card
+                QuietCard(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .border(1.dp, Line, RoundedCornerShape(14.dp)),
                 ) {
                     Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.padding(16.dp),
+                        verticalArrangement = Arrangement.spacedBy(10.dp),
                     ) {
-                        // Official Shield Logo in Clean Container
-                        Box(
-                            modifier = Modifier
-                                .size(68.dp)
-                                .background(AccentSoft, CircleShape)
-                                .border(1.dp, Line, CircleShape),
-                            contentAlignment = Alignment.Center,
-                        ) {
-                            Image(
-                                painter = painterResource(R.drawable.ic_shield),
-                                contentDescription = "DHRASHTA-X Shield Logo",
-                                modifier = Modifier.size(42.dp),
-                            )
-                        }
-
-                        Text(
-                            text = "DHRASHTA-X",
-                            fontSize = 22.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = 0.8.sp,
-                            color = Ink,
-                        )
-
-                        Text(
-                            text = "Institutional Mobile Security & Privacy Compliance",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = MutedInk,
-                            textAlign = TextAlign.Center,
-                        )
-
-                        Spacer(Modifier.height(4.dp))
-
-                        // Verified Compliance Badge
-                        Row(
-                            modifier = Modifier
-                                .background(ForestSoft, RoundedCornerShape(20.dp))
-                                .border(1.dp, Forest.copy(alpha = 0.25f), RoundedCornerShape(20.dp))
-                                .padding(horizontal = 12.dp, vertical = 5.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        ) {
-                            Box(Modifier.size(6.dp).background(Forest, CircleShape))
-                            Text(
-                                text = "DPDP Act 2023 Compliant · Zero Cloud Telemetry",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = Forest,
-                            )
-                        }
+                        MetadataRow(label = "Statutory Framework", value = "Digital Personal Data Protection Act (DPDP Act 2023)")
+                        MetadataRow(label = "Telemetry Policy", value = "Zero Cloud Dispatch · Air-Gapped Local Inference")
+                        MetadataRow(label = "Data Retention", value = "Strict 7-Day Rolling Purge on Private Storage")
+                        MetadataRow(label = "Network Architecture", value = "Loopback TUN Interface (No External Proxy)")
                     }
                 }
 
                 Spacer(Modifier.height(18.dp))
 
-                // Segmented Tabs
+                // Segmented Tabs - Restrained Institutional Style
                 Row(
                     Modifier
                         .fillMaxWidth()
-                        .background(Surface, RoundedCornerShape(12.dp))
-                        .border(1.dp, Line, RoundedCornerShape(12.dp))
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        .background(Surface, RoundedCornerShape(10.dp))
+                        .border(1.dp, Line, RoundedCornerShape(10.dp))
+                        .padding(3.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp),
                 ) {
-                    TabPill(
-                        label = "Data Protection Policies",
+                    TabSegment(
+                        label = "Protection Principles",
                         count = policies.size,
                         selected = selectedTab == 0,
                         modifier = Modifier.weight(1f),
                         onClick = { selectedTab = 0 },
                     )
-                    TabPill(
-                        label = "Services & Permissions",
+                    TabSegment(
+                        label = "Services & Scopes",
                         count = permissions.size,
                         selected = selectedTab == 1,
                         modifier = Modifier.weight(1f),
@@ -288,20 +259,6 @@ fun PolicyScreen(
 
             if (selectedTab == 0) {
                 // Section: Policies
-                item {
-                    Text(
-                        text = "Data Protection & Privacy Architecture",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Ink,
-                    )
-                    Text(
-                        text = "Auditable security principles and statutory protections presented for compliance evaluation.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedInk,
-                        modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
-                    )
-                }
-
                 items(policies.size, key = { "policy-$it" }) { idx ->
                     val item = policies[idx]
                     PolicyCard(item)
@@ -309,20 +266,6 @@ fun PolicyScreen(
                 }
             } else {
                 // Section: Permissions & Services
-                item {
-                    Text(
-                        text = "Requested Android Services & System Permissions",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = Ink,
-                    )
-                    Text(
-                        text = "Every privilege requested is strictly bounded to an on-device defensive purpose.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedInk,
-                        modifier = Modifier.padding(top = 2.dp, bottom = 12.dp),
-                    )
-                }
-
                 items(permissions.size, key = { "perm-$it" }) { idx ->
                     val item = permissions[idx]
                     PermissionCard(item)
@@ -334,7 +277,11 @@ fun PolicyScreen(
             if (onboarding) {
                 item {
                     Spacer(Modifier.height(8.dp))
-                    QuietCard(Modifier.fillMaxWidth()) {
+                    QuietCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, Line, RoundedCornerShape(14.dp)),
+                    ) {
                         Row(
                             Modifier
                                 .clickable { userAcknowledged = !userAcknowledged }
@@ -345,15 +292,16 @@ fun PolicyScreen(
                                 checked = userAcknowledged,
                                 onCheckedChange = { userAcknowledged = it },
                                 colors = CheckboxDefaults.colors(
-                                    checkedColor = Accent,
+                                    checkedColor = Ink,
                                     uncheckedColor = MutedInk,
                                 ),
                             )
-                            Spacer(Modifier.width(8.dp))
+                            Spacer(Modifier.width(10.dp))
                             Text(
-                                text = "I acknowledge that DHRASHTA-X operates 100% on-device with zero cloud telemetry, and consent to local security monitoring.",
+                                text = "I confirm that I have reviewed the DHRASHTA-X Privacy Charter, understand that the application operates strictly on-device with zero cloud telemetry, and grant consent for local security monitoring.",
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = Ink,
+                                lineHeight = 18.sp,
                             )
                         }
                     }
@@ -377,7 +325,7 @@ fun PolicyScreen(
         ) {
             if (onboarding) {
                 PrimaryAction(
-                    text = if (userAcknowledged) "Accept & Continue" else "Acknowledge Policies to Proceed",
+                    text = if (userAcknowledged) "Accept Terms & Continue" else "Acknowledge Policies to Proceed",
                     onClick = {
                         if (userAcknowledged) onAccept()
                     },
@@ -385,7 +333,7 @@ fun PolicyScreen(
                 )
             } else {
                 PrimaryAction(
-                    text = "Close & Return to Settings",
+                    text = "Return to Settings",
                     onClick = { onBack?.invoke() ?: onAccept() },
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -395,7 +343,29 @@ fun PolicyScreen(
 }
 
 @Composable
-private fun TabPill(
+private fun MetadataRow(label: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Medium,
+            color = MutedInk,
+        )
+        Text(
+            text = value,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = Ink,
+        )
+    }
+}
+
+@Composable
+private fun TabSegment(
     label: String,
     count: Int,
     selected: Boolean,
@@ -405,7 +375,7 @@ private fun TabPill(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(8.dp))
-            .background(if (selected) AccentSoft else Color.Transparent)
+            .background(if (selected) SurfaceRaised else Color.Transparent)
             .clickable(onClick = onClick)
             .padding(vertical = 10.dp, horizontal = 8.dp),
         contentAlignment = Alignment.Center,
@@ -416,52 +386,51 @@ private fun TabPill(
         ) {
             Text(
                 text = label,
-                fontSize = 12.sp,
-                fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                color = if (selected) Accent else MutedInk,
+                fontSize = 13.sp,
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Medium,
+                color = if (selected) Ink else MutedInk,
             )
-            Box(
-                modifier = Modifier
-                    .background(
-                        if (selected) Accent else Line,
-                        CircleShape,
-                    )
-                    .padding(horizontal = 6.dp, vertical = 2.dp),
-            ) {
-                Text(
-                    text = count.toString(),
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = if (selected) MaterialTheme.colorScheme.onPrimary else MutedInk,
-                )
-            }
+            Text(
+                text = "($count)",
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Medium,
+                color = MutedInk,
+            )
         }
     }
 }
 
 @Composable
 private fun PolicyCard(item: PolicyItem) {
-    val (badgeColor, badgeBg) = when (item.type) {
-        PolicyType.DPDP -> Forest to ForestSoft
-        PolicyType.STORAGE -> Accent to AccentSoft
-        PolicyType.CONTAINMENT -> Accent to AccentSoft
-        PolicyType.DECOY -> Forest to ForestSoft
-        PolicyType.EXPLAINABILITY -> Accent to AccentSoft
-    }
-
-    QuietCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            // Category badge
-            Text(
-                text = item.category,
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = badgeColor,
-                letterSpacing = 0.5.sp,
-                modifier = Modifier
-                    .background(badgeBg, RoundedCornerShape(4.dp))
-                    .padding(horizontal = 7.dp, vertical = 3.dp),
-            )
+    QuietCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Line, RoundedCornerShape(14.dp)),
+    ) {
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = item.clauseNumber,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = MutedInk,
+                    letterSpacing = 0.8.sp,
+                )
+                Text(
+                    text = item.statutoryRef,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MutedInk,
+                    letterSpacing = 0.4.sp,
+                )
+            }
 
             Text(
                 text = item.title,
@@ -469,19 +438,19 @@ private fun PolicyCard(item: PolicyItem) {
                 color = Ink,
             )
 
-            // Guarantee highlight box
+            // Formal Inset Provision Box
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .background(Canvas, RoundedCornerShape(8.dp))
+                    .background(SurfaceRaised, RoundedCornerShape(8.dp))
                     .border(1.dp, Line, RoundedCornerShape(8.dp))
-                    .padding(10.dp),
+                    .padding(12.dp),
             ) {
                 Text(
                     text = item.guarantee,
                     fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Forest,
+                    color = Ink,
                     lineHeight = 18.sp,
                 )
             }
@@ -498,30 +467,42 @@ private fun PolicyCard(item: PolicyItem) {
 
 @Composable
 private fun PermissionCard(item: PermissionRationale) {
-    QuietCard(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    QuietCard(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Line, RoundedCornerShape(14.dp)),
+    ) {
+        Column(
+            Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
             Row(
                 Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween,
             ) {
                 Text(
-                    text = item.statusTag,
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Accent,
-                    letterSpacing = 0.5.sp,
-                    modifier = Modifier
-                        .background(AccentSoft, RoundedCornerShape(4.dp))
-                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                    text = item.permissionName,
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.Medium,
+                    color = MutedInk,
                 )
 
-                Text(
-                    text = "ON-DEVICE ONLY",
-                    fontSize = 10.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Forest,
-                )
+                Box(
+                    modifier = Modifier
+                        .background(SurfaceRaised, RoundedCornerShape(4.dp))
+                        .border(1.dp, Line, RoundedCornerShape(4.dp))
+                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                ) {
+                    Text(
+                        text = item.scopeTag,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = MutedInk,
+                        letterSpacing = 0.5.sp,
+                    )
+                }
             }
 
             Text(
@@ -530,23 +511,16 @@ private fun PermissionCard(item: PermissionRationale) {
                 color = Ink,
             )
 
-            Text(
-                text = item.permissionName,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                color = MutedInk,
-            )
-
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .background(Canvas, RoundedCornerShape(8.dp))
+                    .background(SurfaceRaised, RoundedCornerShape(8.dp))
                     .border(1.dp, Line, RoundedCornerShape(8.dp))
-                    .padding(10.dp),
+                    .padding(12.dp),
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        text = "Why this is required:",
+                        text = "Technical Justification:",
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Bold,
                         color = Ink,
@@ -560,18 +534,12 @@ private fun PermissionCard(item: PermissionRationale) {
                 }
             }
 
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
-            ) {
-                Box(Modifier.size(5.dp).background(Accent, CircleShape))
-                Text(
-                    text = item.mechanism,
-                    fontSize = 11.sp,
-                    color = MutedInk,
-                    lineHeight = 16.sp,
-                )
-            }
+            Text(
+                text = "Mechanism: ${item.mechanism}",
+                fontSize = 12.sp,
+                color = MutedInk,
+                lineHeight = 17.sp,
+            )
         }
     }
 }
