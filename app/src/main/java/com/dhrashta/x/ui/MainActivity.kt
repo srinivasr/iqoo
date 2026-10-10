@@ -10,6 +10,7 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.enableEdgeToEdge
@@ -35,6 +36,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.lifecycleScope
 import com.dhrashta.x.R
 import com.dhrashta.x.data.AllowList
+import com.dhrashta.x.data.AudioSettingsStore
 import com.dhrashta.x.data.ModelStatus
 import com.dhrashta.x.data.ModelStatusStore
 import com.dhrashta.x.data.MotionState
@@ -68,6 +70,7 @@ class MainActivity : ComponentActivity() {
     private var pendingVpnAction: (() -> Unit)? = null
     private var tts: TextToSpeech? = null
     private var ttsReady = false
+    private var isSpeaking by mutableStateOf(false)
 
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { refresh() }
     // Decoys are opt-in: this launcher runs only after the user taps "Turn on" for decoys. If the
@@ -96,6 +99,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         themeMode = ThemePreference.read(this)
         EventLogger.init(applicationContext)
+        AudioSettingsStore.init(applicationContext)
         ContextCompat.startForegroundService(this, Intent(this, DhrashtaForegroundService::class.java))
         NetworkPause.startDnsMonitor(this)
         val firstRun = !AppLanguage.isChosen(this)
@@ -105,7 +109,23 @@ class MainActivity : ComponentActivity() {
         } else {
             requestNotificationsOnce()
         }
-        tts = TextToSpeech(this, { status -> ttsReady = status == TextToSpeech.SUCCESS }, "com.google.android.tts")
+        tts = TextToSpeech(this, { status ->
+            ttsReady = status == TextToSpeech.SUCCESS
+            if (ttsReady) {
+                tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                    override fun onStart(utteranceId: String?) {
+                        isSpeaking = true
+                    }
+                    override fun onDone(utteranceId: String?) {
+                        isSpeaking = false
+                    }
+                    @Deprecated("Deprecated in Java")
+                    override fun onError(utteranceId: String?) {
+                        isSpeaking = false
+                    }
+                })
+            }
+        }, "com.google.android.tts")
         // Target SDK 35+ draws edge-to-edge; pad content by the system bars so nothing sits under them.
         enableEdgeToEdge()
         setContent {
@@ -134,6 +154,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onPause() {
         tts?.stop()
+        isSpeaking = false
         super.onPause()
     }
 
@@ -155,6 +176,7 @@ class MainActivity : ComponentActivity() {
         val sensorCtx by SensorStateStore.state.collectAsStateWithLifecycle()
         val staticVerdicts by remember { StaticScanStore.load(applicationContext); StaticScanStore.state }.collectAsStateWithLifecycle()
         val liveScores by LiveNetworkStore.state.collectAsStateWithLifecycle()
+        val audioSettings by AudioSettingsStore.state.collectAsStateWithLifecycle()
         val threatInfo by produceState<ThreatList.Info?>(null, tick) {
             value = withContext(Dispatchers.IO) { runCatching { ThreatList.info(applicationContext) }.getOrNull() }
         }
@@ -238,6 +260,9 @@ class MainActivity : ComponentActivity() {
                 trustedApps = installed.orEmpty().filter { it.pkg in trusted },
                 language = language,
                 themeMode = themeMode,
+                audioSettings = audioSettings,
+                onPaceChange = { pace -> AudioSettingsStore.setPace(this, pace) },
+                onSpokenAlertsChange = { enabled -> AudioSettingsStore.setSpokenAlertsEnabled(this, enabled) },
                 onThemeChange = { mode ->
                     ThemePreference.save(this, mode)
                     themeMode = mode
@@ -261,6 +286,7 @@ class MainActivity : ComponentActivity() {
                 RiskDetailsScreen(
                     risk = risk,
                     explanation = evaluation.explanation?.takeIf { evaluation.packageName == risk.app.pkg },
+                    isSpeaking = isSpeaking,
                     onBack = { destination = Screen.Home },
                     onPauseInternet = { withVpnConsent { pause(risk) } },
                     onOpenPaused = { destination = Screen.Paused(risk.app.pkg) },
@@ -270,6 +296,7 @@ class MainActivity : ComponentActivity() {
                     onListen = ::speak,
                     onInspect = { on -> withVpnConsent { inspect(risk, on) } },
                     liveThreshold = LiveNetworkStore.threshold,
+                    onShareReport = ::shareReport,
                     onAnalyze = {
                         DhrashtaForegroundService.requestStaticScan(this, risk.app.pkg)
                         DhrashtaForegroundService.requestEvaluation(this, risk.app.pkg)
@@ -594,6 +621,7 @@ class MainActivity : ComponentActivity() {
         }
         if (engine.isSpeaking) {
             engine.stop()
+            isSpeaking = false
             return
         }
         val tag = AppLanguage.currentTag(this)
@@ -618,8 +646,18 @@ class MainActivity : ComponentActivity() {
             engine.voice = bestVoice
         }
         engine.setPitch(1.02f)
-        engine.setSpeechRate(1.0f)
+        engine.setSpeechRate(AudioSettingsStore.getPace(this))
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "explanation")
+    }
+
+    private fun shareReport(risk: AppRisk) {
+        val report = formatIncidentReport(resources, risk)
+        val sendIntent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_SUBJECT, "Security Report: ${risk.app.label}")
+            putExtra(Intent.EXTRA_TEXT, report)
+        }
+        startActivity(Intent.createChooser(sendIntent, getString(R.string.share_report_title)))
     }
 
     private fun notificationsEnabled() = NotificationManagerCompat.from(this).areNotificationsEnabled()

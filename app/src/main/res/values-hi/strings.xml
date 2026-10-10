@@ -339,4 +339,16 @@
     <string name="narrative_advice_critical">यह एक गंभीर खतरे का संकेत है। तुरंत इसकी अनुमतियाँ जाँचें और यदि भरोसा न हो तो हटा दें।</string>
     <string name="narrative_advice_review">ये संकेत पक्का ख़तरा साबित नहीं करते, लेकिन यदि आप इसे नहीं पहचानते तो इसकी अनुमतियाँ जाँचें और हटा दें।</string>
     <string name="narrative_advice_low">ये अनुमतियाँ आम हैं और अपने-आप में आमतौर पर कम जोखिम वाली हैं।</string>
+    <!-- Audio & Speech Preferences -->
+    <string name="settings_audio_title">ऑडियो व आवाज़</string>
+    <string name="set_speech_pace">बोलने की गति</string>
+    <string name="audio_pace_relaxed">धीमी (0.85×)</string>
+    <string name="audio_pace_normal">सामान्य (1.0×)</string>
+    <string name="audio_pace_brisk">तेज़ (1.15×)</string>
+    <string name="set_spoken_alerts_title">बोलकर ख़तरे की चेतावनी</string>
+    <string name="set_spoken_alerts_detail">जब किसी गंभीर ख़तरे वाले ऐप को रोका जाए, तो तुरंत बोलकर चेतावनी दें।</string>
+    <string name="details_listening_active">विवरण सुनाया जा रहा है…</string>
+    <string name="action_stop_audio">रोकें</string>
+    <string name="action_share_report">सुरक्षा रिपोर्ट साझा करें</string>
+    <string name="share_report_title">सुरक्षा रिपोर्ट भेजें</string>
 </resources>

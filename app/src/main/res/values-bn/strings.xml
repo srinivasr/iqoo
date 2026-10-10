@@ -339,4 +339,16 @@
     <string name="narrative_advice_critical">এটি একটি বিপজ্জনক হুমকির ধরন। এখনই এর অনুমতিগুলো যাচাই করুন এবং বিশ্বাস না হলে সরিয়ে দিন।</string>
     <string name="narrative_advice_review">এই সতর্কতাগুলো ম্যালওয়্যার নিশ্চিত করে না, তবে আপনি যদি এটিকে না চেনেন তবে এর অনুমতিগুলো দেখে সরিয়ে দিন।</string>
     <string name="narrative_advice_low">এই অনুমতিগুলো সচরাচর দেখা যায় এবং সাধারণত নিজে থেকে কম ঝুঁকির।</string>
+    <!-- Audio & Speech Preferences -->
+    <string name="settings_audio_title">অডিও ও ভয়েস</string>
+    <string name="set_speech_pace">কথা বলার গতি</string>
+    <string name="audio_pace_relaxed">ধীর (0.85×)</string>
+    <string name="audio_pace_normal">স্বাভাবিক (1.0×)</string>
+    <string name="audio_pace_brisk">দ্রুত (1.15×)</string>
+    <string name="set_spoken_alerts_title">কণ্ঠে বিপদের সতর্কতা</string>
+    <string name="set_spoken_alerts_detail">উচ্চ ঝুঁকিপূর্ণ ট্রোজান আটকানোর সাথে সাথে অবিলম্বে ভয়েস সতর্কতা দিন।</string>
+    <string name="details_listening_active">ব্যাখ্যা শোনানো হচ্ছে…</string>
+    <string name="action_stop_audio">থামুন</string>
+    <string name="action_share_report">নিরাপত্তা রিপোর্ট শেয়ার করুন</string>
+    <string name="share_report_title">নিরাপত্তা রিপোর্ট পাঠান</string>
 </resources>

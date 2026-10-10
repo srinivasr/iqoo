@@ -353,4 +353,16 @@
     <string name="narrative_advice_critical">This is a critical threat pattern. Check its permissions immediately and uninstall it if you do not trust it.</string>
     <string name="narrative_advice_review">These warning signs do not confirm malware, but we recommend checking its permissions and removing it if you do not recognise it.</string>
     <string name="narrative_advice_low">These permissions are common and generally low risk on their own.</string>
+    <!-- Audio & Speech Preferences -->
+    <string name="settings_audio_title">Audio &amp; Speech</string>
+    <string name="set_speech_pace">Speech Pace</string>
+    <string name="audio_pace_relaxed">Relaxed (0.85×)</string>
+    <string name="audio_pace_normal">Normal (1.0×)</string>
+    <string name="audio_pace_brisk">Brisk (1.15×)</string>
+    <string name="set_spoken_alerts_title">Spoken Threat Warnings</string>
+    <string name="set_spoken_alerts_detail">Speak an immediate voice alert when a high-risk trojan is quarantined.</string>
+    <string name="details_listening_active">Playing explanation…</string>
+    <string name="action_stop_audio">Stop</string>
+    <string name="action_share_report">Share Incident Report</string>
+    <string name="share_report_title">Share Security Report</string>
 </resources>

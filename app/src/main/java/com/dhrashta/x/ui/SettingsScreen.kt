@@ -80,6 +80,9 @@ fun SettingsScreen(
     trustedApps: List<InstalledApp>,
     language: AppLanguage.Option,
     themeMode: AppThemeMode,
+    audioSettings: com.dhrashta.x.data.AudioSettings = com.dhrashta.x.data.AudioSettings(),
+    onPaceChange: (com.dhrashta.x.data.SpeechPace) -> Unit = {},
+    onSpokenAlertsChange: (Boolean) -> Unit = {},
     onThemeChange: (AppThemeMode) -> Unit,
     onHome: () -> Unit,
     onActivity: () -> Unit,
@@ -147,6 +150,44 @@ fun SettingsScreen(
                         modifier = Modifier.padding(end = 6.dp),
                     )
                     Chevron(color = Accent)
+                }
+            }
+
+            Spacer(Modifier.height(30.dp))
+            SectionTitle(stringResource(R.string.settings_audio_title))
+            Spacer(Modifier.height(12.dp))
+            QuietCard(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(horizontal = 16.dp)) {
+                    Column(Modifier.padding(vertical = 12.dp)) {
+                        Text(stringResource(R.string.set_speech_pace), style = MaterialTheme.typography.titleMedium)
+                        Spacer(Modifier.height(8.dp))
+                        Row(
+                            Modifier.fillMaxWidth().background(Canvas, RoundedCornerShape(10.dp)).padding(3.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            com.dhrashta.x.data.SpeechPace.entries.forEach { pace ->
+                                val selected = pace == audioSettings.pace
+                                Text(
+                                    stringResource(pace.labelRes),
+                                    modifier = Modifier.weight(1f)
+                                        .background(if (selected) AccentSoft else Canvas, RoundedCornerShape(8.dp))
+                                        .clickable { onPaceChange(pace) }
+                                        .padding(vertical = 8.dp),
+                                    color = if (selected) Accent else Ink,
+                                    textAlign = TextAlign.Center,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                                )
+                            }
+                        }
+                    }
+                    HorizontalDivider(color = Line)
+                    SettingRow(
+                        title = R.string.set_spoken_alerts_title,
+                        detail = R.string.set_spoken_alerts_detail,
+                        on = audioSettings.spokenAlertsEnabled,
+                        onToggle = { onSpokenAlertsChange(!audioSettings.spokenAlertsEnabled) },
+                    )
                 }
             }
 

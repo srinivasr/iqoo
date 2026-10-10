@@ -5,16 +5,19 @@ import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -128,10 +131,76 @@ fun explanationFor(res: Resources, risk: AppRisk): String {
     return story.joinToString(" ")
 }
 
+/** Formats a clean, professional incident report for user export and sharing. */
+fun formatIncidentReport(res: Resources, risk: AppRisk): String {
+    val sb = StringBuilder()
+    sb.appendLine("DHRASHTA-X Security Incident Report")
+    sb.appendLine("===================================")
+    sb.appendLine("App: ${risk.app.label} (${risk.app.pkg})")
+    sb.appendLine("Risk Level: ${risk.level.name.uppercase()} (Score: ${risk.score}/100)")
+    sb.appendLine("Installation Source: ${sourceText(res, risk.app)}")
+    sb.appendLine("Internet Status: ${if (risk.paused) "PAUSED (Contained)" else "Active"}")
+    sb.appendLine()
+    sb.appendLine("Plain-Language Summary:")
+    sb.appendLine(explanationFor(res, risk))
+    sb.appendLine()
+    if (risk.evidence.isNotEmpty()) {
+        sb.appendLine("Observed Findings:")
+        risk.evidence.forEach { ev ->
+            sb.appendLine("- ${ev.title}: ${ev.detail}")
+        }
+        sb.appendLine()
+    }
+    sb.appendLine("Generated locally on-device by DHRASHTA-X on ${java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault()).format(java.util.Date())}")
+    return sb.toString()
+}
+
+@Composable
+fun EqualizerAnimation(modifier: Modifier = Modifier, color: Color = Danger) {
+    val infiniteTransition = androidx.compose.animation.core.rememberInfiniteTransition(label = "equalizer")
+    val anim1 by infiniteTransition.animateFloat(
+        initialValue = 0.25f,
+        targetValue = 1.0f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(400, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "bar1",
+    )
+    val anim2 by infiniteTransition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 0.3f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(320, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "bar2",
+    )
+    val anim3 by infiniteTransition.animateFloat(
+        initialValue = 0.35f,
+        targetValue = 0.95f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            animation = androidx.compose.animation.core.tween(480, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = androidx.compose.animation.core.RepeatMode.Reverse,
+        ),
+        label = "bar3",
+    )
+    Row(
+        modifier = modifier.height(20.dp),
+        horizontalArrangement = Arrangement.spacedBy(3.dp),
+        verticalAlignment = Alignment.Bottom,
+    ) {
+        Box(Modifier.width(3.dp).fillMaxHeight(anim1).background(color, RoundedCornerShape(1.dp)))
+        Box(Modifier.width(3.dp).fillMaxHeight(anim2).background(color, RoundedCornerShape(1.dp)))
+        Box(Modifier.width(3.dp).fillMaxHeight(anim3).background(color, RoundedCornerShape(1.dp)))
+    }
+}
+
 @Composable
 fun RiskDetailsScreen(
     risk: AppRisk,
     explanation: String?,
+    isSpeaking: Boolean = false,
     onBack: () -> Unit,
     onPauseInternet: () -> Unit,
     onOpenPaused: () -> Unit,
@@ -142,11 +211,13 @@ fun RiskDetailsScreen(
     onAnalyze: () -> Unit,
     onInspect: (Boolean) -> Unit = {},
     liveThreshold: Float = 1f,
+    onShareReport: (AppRisk) -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
     var evidenceExpanded by rememberSaveable(risk.app.pkg) { mutableStateOf(false) }
     val res = LocalContext.current.resources
     val summary = explanation ?: explanationFor(res, risk)
+
     Column(
         Modifier.fillMaxSize().background(Canvas).verticalScroll(rememberScrollState()).padding(horizontal = ScreenPadding),
     ) {
@@ -198,8 +269,38 @@ fun RiskDetailsScreen(
         }
         Spacer(Modifier.height(10.dp))
         ClickableRow({ onListen(summary) }) {
-            LineIcon(LineIconType.Speaker, Modifier.size(22.dp))
-            Text(stringResource(R.string.details_listen), fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(start = 12.dp).weight(1f))
+            if (isSpeaking) {
+                EqualizerAnimation(modifier = Modifier.size(22.dp), color = Danger)
+                Text(
+                    stringResource(R.string.details_listening_active),
+                    fontWeight = FontWeight.SemiBold,
+                    color = Danger,
+                    modifier = Modifier.padding(start = 12.dp).weight(1f),
+                )
+                Text(
+                    stringResource(R.string.action_stop_audio),
+                    fontWeight = FontWeight.Bold,
+                    color = Danger,
+                    modifier = Modifier.padding(end = 4.dp),
+                )
+            } else {
+                LineIcon(LineIconType.Speaker, Modifier.size(22.dp))
+                Text(
+                    stringResource(R.string.details_listen),
+                    fontWeight = FontWeight.SemiBold,
+                    modifier = Modifier.padding(start = 12.dp).weight(1f),
+                )
+                Chevron()
+            }
+        }
+        HorizontalDivider(color = Line)
+        ClickableRow({ onShareReport(risk) }) {
+            LineIcon(LineIconType.Share, Modifier.size(22.dp), color = com.dhrashta.x.ui.theme.Accent)
+            Text(
+                stringResource(R.string.action_share_report),
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.padding(start = 12.dp).weight(1f),
+            )
             Chevron()
         }
         HorizontalDivider(color = Line)
@@ -339,3 +440,4 @@ private fun EvidenceItem(title: String, detail: String, dot: Color) {
         }
     }
 }
+

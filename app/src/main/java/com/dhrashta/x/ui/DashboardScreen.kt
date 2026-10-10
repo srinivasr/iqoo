@@ -355,7 +355,7 @@ private fun RowScope.BottomItem(label: String, icon: LineIconType, selected: Boo
     }
 }
 
-enum class LineIconType { Home, Activity, Settings, Chevron, Back, Speaker, Check }
+enum class LineIconType { Home, Activity, Settings, Chevron, Back, Speaker, Check, Share }
 
 private val SettingsGearPath: Path by lazy {
     PathParser().parsePathString(
@@ -395,6 +395,17 @@ fun LineIcon(type: LineIconType, modifier: Modifier = Modifier, color: Color = I
                 drawPath(p, color, style = stroke); drawArc(color, -55f, 110f, false, topLeft = Offset(w * .42f, h * .27f), size = androidx.compose.ui.geometry.Size(w * .38f, h * .46f), style = stroke)
             }
             LineIconType.Check -> { drawLine(color, Offset(w * .2f, h * .52f), Offset(w * .42f, h * .72f), strokeWidth = 2.8f, cap = StrokeCap.Round); drawLine(color, Offset(w * .42f, h * .72f), Offset(w * .82f, h * .27f), strokeWidth = 2.8f, cap = StrokeCap.Round) }
+            LineIconType.Share -> {
+                val x1 = w * 0.72f; val y1 = h * 0.28f
+                val x2 = w * 0.28f; val y2 = h * 0.50f
+                val x3 = w * 0.72f; val y3 = h * 0.72f
+                val r = w * 0.09f
+                drawLine(color, Offset(x2, y2), Offset(x1, y1), strokeWidth = stroke.width)
+                drawLine(color, Offset(x2, y2), Offset(x3, y3), strokeWidth = stroke.width)
+                drawCircle(color, r, Offset(x1, y1), style = stroke)
+                drawCircle(color, r, Offset(x2, y2), style = stroke)
+                drawCircle(color, r, Offset(x3, y3), style = stroke)
+            }
         }
     } }
 }

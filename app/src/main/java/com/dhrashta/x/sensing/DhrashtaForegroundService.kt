@@ -7,6 +7,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
+import android.speech.tts.TextToSpeech
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import com.dhrashta.x.R
@@ -19,6 +20,7 @@ import com.dhrashta.x.ai.staticml.StaticApkScanner
 import com.dhrashta.x.ai.staticml.StaticModel
 import com.dhrashta.x.data.AllowList
 import com.dhrashta.x.data.AppLanguage
+import com.dhrashta.x.data.AudioSettingsStore
 import com.dhrashta.x.data.EvaluationStateStore
 import com.dhrashta.x.data.EventLogger
 import com.dhrashta.x.data.ModelStatusStore
@@ -43,6 +45,8 @@ import kotlinx.coroutines.withContext
 
 class DhrashtaForegroundService : Service() {
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private var alertTts: TextToSpeech? = null
+    private var alertTtsReady = false
     private lateinit var observer: A11yObserver
     private lateinit var packageWatcher: PackageWatcher
     private lateinit var devicePostureWatcher: DevicePostureWatcher
@@ -74,6 +78,10 @@ class DhrashtaForegroundService : Service() {
         createChannels()
         startForeground(MONITOR_NOTIFICATION_ID, monitorNotification())
         EventLogger.init(this)
+        AudioSettingsStore.init(this)
+        alertTts = TextToSpeech(this, { status ->
+            alertTtsReady = status == TextToSpeech.SUCCESS
+        }, "com.google.android.tts")
         threatList = runCatching { ThreatList.load(this) }.getOrElse {
             Log.e(TAG, "Could not load threats.json; continuing with an empty local threat list", it)
             ThreatList.empty()
@@ -175,6 +183,8 @@ class DhrashtaForegroundService : Service() {
         networkModel?.close()
         staticModel?.close()
         serviceScope.cancel()
+        alertTts?.shutdown()
+        alertTts = null
         EvaluationStateStore.update { it.copy(monitoring = false, evaluating = false, message = "Monitoring stopped") }
         super.onDestroy()
     }
@@ -436,6 +446,19 @@ class DhrashtaForegroundService : Service() {
             )
             .build()
         getSystemService(NotificationManager::class.java).notify(pkg.hashCode(), notification)
+        if (result.band == RiskEngine.Band.CRITICAL && AudioSettingsStore.isSpokenAlertsEnabled(this@DhrashtaForegroundService)) {
+            speakCriticalAlert(appLabel)
+        }
+    }
+
+    private fun speakCriticalAlert(appLabel: String) {
+        val engine = alertTts
+        if (engine != null && alertTtsReady) {
+            val pace = AudioSettingsStore.getPace(this)
+            engine.setSpeechRate(pace)
+            val msg = "Security alert. $appLabel was flagged as a critical threat and network access was paused."
+            engine.speak(msg, TextToSpeech.QUEUE_FLUSH, null, "critical_alert_$appLabel")
+        }
     }
 
     private suspend fun showStaticNotification(appLabel: String, pkg: String, verdict: StaticVerdict) =
