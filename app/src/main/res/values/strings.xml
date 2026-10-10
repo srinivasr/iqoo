@@ -329,4 +329,28 @@
     <string name="cov_btexfil_ok">Online or Bluetooth off — no offline Bluetooth-leak risk right now</string>
     <string name="cov_btexfil_risk">Phone offline + Bluetooth ON — a risky app could leak data over Bluetooth. Consider turning Bluetooth off.</string>
     <string name="cov_btexfil_idle">Reading network &amp; Bluetooth state…</string>
+    <!-- Human Narrative Summaries (Anti-Jargon Voice & UI) -->
+    <string name="narrative_intro">Here is what DHRASHTA-X observed for %1$s:</string>
+    <string name="narrative_sideload_generic">%1$s was installed from the internet outside Google Play.</string>
+    <string name="narrative_sideload_source">%1$s was installed through %2$s outside Google Play.</string>
+    <string name="narrative_threat_list">Its digital signature matches a known malicious threat on the device threat list.</string>
+    <string name="narrative_chain_cc1">%1$s was downloaded outside Google Play and granted screen control within 10 minutes.</string>
+    <string name="narrative_chain_cc2">After gaining accessibility control, it began contacting an unknown remote server on a periodic timer.</string>
+    <string name="narrative_chain_cc3">Right after a banking app was opened, it attempted to copy and exfiltrate private decoy security data.</string>
+    <string name="narrative_chain_cc4">Developer debugging was switched on immediately before this app received elevated permissions.</string>
+    <string name="narrative_chain_cc5">A managed work profile was created and this cloned app was added to it.</string>
+    <string name="narrative_timing_a6">Accessibility permission was turned on within 10 minutes of installing it.</string>
+    <string name="narrative_cap_a11y_sms">It has permission to observe your screen and read one-time SMS verification passwords.</string>
+    <string name="narrative_cap_a11y_overlay">It can observe your screen and draw fake login windows on top of other apps.</string>
+    <string name="narrative_cap_a11y_full">It has deep control to read everything on your screen and tap buttons on your behalf.</string>
+    <string name="narrative_cap_sms">It can read text messages sent to your phone, including banking codes.</string>
+    <string name="narrative_cap_overlay">It has permission to draw screens on top of other applications.</string>
+    <string name="narrative_canary_leak">It was caught attempting to copy and upload private decoy security tokens to the internet.</string>
+    <string name="narrative_covert_beacon">It was caught secretly contacting an unknown remote server on a fixed schedule in the background.</string>
+    <string name="narrative_hidden_icon">It hides its launcher icon so you cannot easily see or open it.</string>
+    <string name="narrative_mimics_brand">Its name or icon mimics a recognized bank or government identity.</string>
+    <string name="narrative_advice_paused">Internet access is paused for this app to protect your data. If you did not intend to install it, remove it now.</string>
+    <string name="narrative_advice_critical">This is a critical threat pattern. Check its permissions immediately and uninstall it if you do not trust it.</string>
+    <string name="narrative_advice_review">These warning signs do not confirm malware, but we recommend checking its permissions and removing it if you do not recognise it.</string>
+    <string name="narrative_advice_low">These permissions are common and generally low risk on their own.</string>
 </resources>

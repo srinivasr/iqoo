@@ -59,15 +59,73 @@ import com.dhrashta.x.ui.theme.Info
 import com.dhrashta.x.ui.theme.Line
 import com.dhrashta.x.ui.theme.MutedInk
 
-/** Plain-language summary of why [risk] got its score; used on screen and for "Listen". */
-fun explanationFor(res: Resources, risk: AppRisk): String = when {
-    risk.trusted -> res.getString(R.string.explain_trusted, risk.app.label)
-    risk.evidence.isEmpty() -> res.getString(R.string.explain_clean, risk.app.label, sourceText(res, risk.app))
-    else -> res.getString(
-        R.string.explain_findings,
-        risk.app.label,
-        risk.evidence.joinToString(res.getString(R.string.explain_separator)) { it.title.replaceFirstChar(Char::lowercase) },
-    ) + " " + res.getString(if (risk.level >= RiskLevel.Review) R.string.explain_review_advice else R.string.explain_low_advice)
+/** Plain-language, anti-jargon summary of why [risk] got its score; used on screen and for "Listen". */
+fun explanationFor(res: Resources, risk: AppRisk): String {
+    if (risk.trusted) return res.getString(R.string.explain_trusted, risk.app.label)
+    if (risk.evidence.isEmpty()) return res.getString(R.string.explain_clean, risk.app.label, sourceText(res, risk.app))
+
+    val story = mutableListOf<String>()
+
+    // 1. Threat feed signature match
+    if (risk.app.inThreatList) {
+        story += res.getString(R.string.narrative_threat_list)
+    }
+
+    // 2. Install origin / provenance
+    if (risk.app.sideloaded) {
+        val source = risk.app.installerLabel
+        if (source != null) {
+            story += res.getString(R.string.narrative_sideload_source, risk.app.label, source)
+        } else {
+            story += res.getString(R.string.narrative_sideload_generic, risk.app.label)
+        }
+    }
+
+    // 3. Combined Sensitive Capabilities
+    val hasA11y = risk.app.a11yEnabled
+    val readsSms = risk.app.readsSms
+    val drawsOverlay = risk.app.requestsOverlay
+
+    when {
+        hasA11y && readsSms -> story += res.getString(R.string.narrative_cap_a11y_sms)
+        hasA11y && drawsOverlay -> story += res.getString(R.string.narrative_cap_a11y_overlay)
+        hasA11y -> story += res.getString(R.string.narrative_cap_a11y_full)
+        readsSms -> story += res.getString(R.string.narrative_cap_sms)
+        drawsOverlay -> story += res.getString(R.string.narrative_cap_overlay)
+    }
+
+    // 4. Deception & Covert Network Activity
+    if (risk.evidence.any { it.weight >= 50 && (it.title.contains("canary", ignoreCase = true) || it.title.contains("नकली", ignoreCase = true) || it.title.contains("নকল", ignoreCase = true)) }) {
+        story += res.getString(R.string.narrative_canary_leak)
+    }
+    if (risk.evidence.any { it.title.contains("beacon", ignoreCase = true) || it.title.contains("सर्वर", ignoreCase = true) || it.title.contains("সার্ভার", ignoreCase = true) }) {
+        story += res.getString(R.string.narrative_covert_beacon)
+    }
+    if (!risk.app.hasLauncher && !risk.app.isSystem) {
+        story += res.getString(R.string.narrative_hidden_icon)
+    }
+    if (risk.app.mimicsBrand) {
+        story += res.getString(R.string.narrative_mimics_brand)
+    }
+
+    // Fallback ensuring no evidence is dropped if no specific narrative rule matched
+    if (story.isEmpty()) {
+        story += res.getString(
+            R.string.explain_findings,
+            risk.app.label,
+            risk.evidence.joinToString(res.getString(R.string.explain_separator)) { it.title.replaceFirstChar(Char::lowercase) },
+        )
+    }
+
+    // 5. Actionable Advice
+    story += when {
+        risk.paused -> res.getString(R.string.narrative_advice_paused)
+        risk.level == RiskLevel.Critical -> res.getString(R.string.narrative_advice_critical)
+        risk.level >= RiskLevel.Review -> res.getString(R.string.narrative_advice_review)
+        else -> res.getString(R.string.narrative_advice_low)
+    }
+
+    return story.joinToString(" ")
 }
 
 @Composable

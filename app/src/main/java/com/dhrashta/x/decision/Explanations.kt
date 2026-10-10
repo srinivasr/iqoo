@@ -9,23 +9,111 @@ import com.dhrashta.x.R
  */
 object Explanations {
     fun build(context: Context, appLabel: String, result: RiskEngine.Result, chains: List<CausalChains.Chain>): String {
-        val res = context.resources
-        val observed = result.firedSignals.filter { it.weight > 0 }.mapNotNull { sentenceFor(it.id) }.map(res::getString)
-        val parts = mutableListOf<String>()
-        if (observed.isEmpty()) {
-            parts += res.getString(R.string.expl_nothing, appLabel)
-        } else {
-            parts += res.getString(R.string.expl_intro, appLabel) + " " + observed.joinToString("; ") + "."
-        }
-        chains.forEach { chain -> parts += res.getString(R.string.expl_chain, chain.id, chain.steps.joinToString(" → ")) }
-        parts += res.getString(
-            when (result.band) {
-                RiskEngine.Band.CRITICAL -> R.string.expl_advice_critical
-                RiskEngine.Band.HIGH, RiskEngine.Band.REVIEW -> R.string.expl_advice_review
-                RiskEngine.Band.SAFE -> R.string.expl_advice_low
+        return build(
+            resolver = { id, args ->
+                if (args.isEmpty()) context.resources.getString(id) else context.resources.getString(id, *args)
             },
+            appLabel = appLabel,
+            result = result,
+            chains = chains,
         )
-        if (result.trusted) parts += res.getString(R.string.expl_trusted_suffix)
+    }
+
+    fun build(
+        resolver: (Int, Array<out Any>) -> String,
+        appLabel: String,
+        result: RiskEngine.Result,
+        chains: List<CausalChains.Chain>,
+    ): String {
+        val sigIds = result.firedSignals.map { it.id }.toSet()
+        val chainIds = chains.map { it.id }.toSet()
+        val parts = mutableListOf<String>()
+
+        if (sigIds.isEmpty() && chainIds.isEmpty()) {
+            parts += resolver(R.string.expl_nothing, arrayOf(appLabel))
+            if (result.trusted) parts += resolver(R.string.expl_trusted_suffix, emptyArray())
+            return parts.joinToString(" ")
+        }
+
+        // 1. Threat Feed Signature
+        if ("B4" in sigIds) {
+            parts += resolver(R.string.narrative_threat_list, emptyArray())
+        }
+
+        // 2. Provenance & Temporal Causal Chains
+        if ("CC-1" in chainIds) {
+            parts += resolver(R.string.narrative_chain_cc1, arrayOf(appLabel))
+        } else if ("B1" in sigIds) {
+            parts += resolver(R.string.narrative_sideload_generic, arrayOf(appLabel))
+        }
+
+        if ("CC-2" in chainIds) {
+            parts += resolver(R.string.narrative_chain_cc2, emptyArray())
+        }
+        if ("CC-3" in chainIds) {
+            parts += resolver(R.string.narrative_chain_cc3, emptyArray())
+        }
+        if ("CC-4" in chainIds) {
+            parts += resolver(R.string.narrative_chain_cc4, emptyArray())
+        }
+        if ("CC-5" in chainIds) {
+            parts += resolver(R.string.narrative_chain_cc5, emptyArray())
+        }
+
+        if ("CC-1" !in chainIds && "A6" in sigIds) {
+            parts += resolver(R.string.narrative_timing_a6, emptyArray())
+        }
+
+        // 3. Combined Sensitive Capabilities
+        val hasA11y = "A1" in sigIds || "A2" in sigIds || "A3" in sigIds || "A4" in sigIds
+        val hasOverlay = "C1" in sigIds
+        val readsSms = "C6" in sigIds
+
+        when {
+            hasA11y && readsSms -> parts += resolver(R.string.narrative_cap_a11y_sms, emptyArray())
+            hasA11y && hasOverlay -> parts += resolver(R.string.narrative_cap_a11y_overlay, emptyArray())
+            hasA11y && ("A2" in sigIds || "A3" in sigIds) -> parts += resolver(R.string.narrative_cap_a11y_full, emptyArray())
+            hasA11y -> parts += resolver(R.string.expl_sig_a1, emptyArray())
+            readsSms -> parts += resolver(R.string.narrative_cap_sms, emptyArray())
+            hasOverlay -> parts += resolver(R.string.narrative_cap_overlay, emptyArray())
+        }
+
+        // 4. Deception & Covert Network Activity
+        if ("HIGH_TAINT_MATCH" in sigIds && "CC-3" !in chainIds) {
+            parts += resolver(R.string.narrative_canary_leak, emptyArray())
+        }
+        if (("E4" in sigIds || "BT1" in sigIds) && "CC-2" !in chainIds) {
+            parts += resolver(R.string.narrative_covert_beacon, emptyArray())
+        }
+        if ("E6" in sigIds) {
+            parts += resolver(R.string.expl_sig_e6, emptyArray())
+        }
+        if ("B5" in sigIds) {
+            parts += resolver(R.string.narrative_hidden_icon, emptyArray())
+        }
+        if ("B6" in sigIds) {
+            parts += resolver(R.string.narrative_mimics_brand, emptyArray())
+        }
+
+        // Fallback to legacy sentence mapping if no structured narrative triggers were matched
+        if (parts.isEmpty()) {
+            val observed = result.firedSignals.filter { it.weight > 0 }.mapNotNull { sentenceFor(it.id) }.map { resolver(it, emptyArray()) }
+            if (observed.isNotEmpty()) {
+                parts += resolver(R.string.expl_intro, arrayOf(appLabel)) + " " + observed.joinToString("; ") + "."
+            }
+        }
+
+        // 5. Actionable Advice
+        parts += resolver(
+            when (result.band) {
+                RiskEngine.Band.CRITICAL -> R.string.narrative_advice_critical
+                RiskEngine.Band.HIGH, RiskEngine.Band.REVIEW -> R.string.narrative_advice_review
+                RiskEngine.Band.SAFE -> R.string.narrative_advice_low
+            },
+            emptyArray(),
+        )
+        if (result.trusted) parts += resolver(R.string.expl_trusted_suffix, emptyArray())
+
         return parts.joinToString(" ")
     }
 

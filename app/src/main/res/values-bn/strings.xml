@@ -315,4 +315,28 @@
     <string name="cov_btexfil_ok">অনলাইন বা Bluetooth বন্ধ — এখন অফলাইন Bluetooth-ফাঁসের ঝুঁকি নেই</string>
     <string name="cov_btexfil_risk">ফোন অফলাইন + Bluetooth চালু — ঝুঁকিপূর্ণ অ্যাপ Bluetooth দিয়ে ডেটা ফাঁস করতে পারে। Bluetooth বন্ধ করুন।</string>
     <string name="cov_btexfil_idle">নেটওয়ার্ক ও Bluetooth অবস্থা পড়া হচ্ছে…</string>
+    <!-- Human Narrative Summaries (Anti-Jargon Voice & UI) -->
+    <string name="narrative_intro">%1$s-এর জন্য DHRASHTA-X যা লক্ষ্য করেছে:</string>
+    <string name="narrative_sideload_generic">%1$s-কে Google Play-র বাইরে ইন্টারনেট থেকে ইনস্টল করা হয়েছিল।</string>
+    <string name="narrative_sideload_source">%1$s-কে Google Play-র বাইরে %2$s দিয়ে ইনস্টল করা হয়েছিল।</string>
+    <string name="narrative_threat_list">এর ডিজিটাল স্বাক্ষর ডিভাইসের পরিচিত হুমকি তালিকার সাথে মিলে গেছে।</string>
+    <string name="narrative_chain_cc1">%1$s-কে Google Play-র বাইরে ইনস্টল করা হয়েছিল এবং ১০ মিনিটের মধ্যে স্ক্রিন নিয়ন্ত্রণের অনুমতি দেওয়া হয়েছিল।</string>
+    <string name="narrative_chain_cc2">অ্যাক্সেসিবিলিটি নিয়ন্ত্রণ পাওয়ার পর, এটি নির্দিষ্ট সময় পরপর একটি অজানা সার্ভারের সাথে যোগাযোগ শুরু করে।</string>
+    <string name="narrative_chain_cc3">একটি ব্যাংকিং অ্যাপ খোলার পরপরই, এটি ব্যক্তিগত নিরাপত্তা ডেটা চুরি করে পাঠানোর চেষ্টা করেছিল।</string>
+    <string name="narrative_chain_cc4">এই অ্যাপটি উচ্চ অনুমতি পাওয়ার ঠিক আগে ডেভেলপার ডিবাগিং চালু করা হয়েছিল।</string>
+    <string name="narrative_chain_cc5">একটি আলাদা ওয়ার্ক প্রোফাইল তৈরি করা হয়েছিল এবং এই অ্যাপটিকে সেখানে যুক্ত করা হয়েছিল।</string>
+    <string name="narrative_timing_a6">ইনস্টল করার ১০ মিনিটের মধ্যে অ্যাক্সেসিবিলিটি অনুমতি চালু করা হয়েছিল।</string>
+    <string name="narrative_cap_a11y_sms">এর কাছে আপনার স্ক্রিন দেখার এবং SMS-এ আসা এককালীন (OTP) পাসওয়ার্ড পড়ার অনুমতি রয়েছে।</string>
+    <string name="narrative_cap_a11y_overlay">এটি আপনার স্ক্রিন দেখতে পারে এবং অন্য অ্যাপের উপরে নকল লগইন উইন্ডো দেখাতে পারে।</string>
+    <string name="narrative_cap_a11y_full">আপনার স্ক্রিনের সবকিছু পড়ার এবং আপনার হয়ে বোতাম টেপার গভীর ক্ষমতা এর রয়েছে।</string>
+    <string name="narrative_cap_sms">এটি আপনার ফোনে আসা টেক্সট মেসেজ পড়তে পারে, যার মধ্যে ব্যাংক কোডও রয়েছে।</string>
+    <string name="narrative_cap_overlay">এর অন্য অ্যাপ্লিকেশনের উপরে স্ক্রিন বসানোর অনুমতি রয়েছে।</string>
+    <string name="narrative_canary_leak">ইন্টারনেটে ব্যক্তিগত নিরাপত্তা ডেটা চুরি করে পাঠানোর চেষ্টা করার সময় এটি ধরা পড়েছে।</string>
+    <string name="narrative_covert_beacon">ব্যাকগ্রাউন্ডে নির্দিষ্ট সময় পরপর একটি অজানা সার্ভারের সাথে গোপনে যোগাযোগ করার সময় এটি ধরা পড়েছে।</string>
+    <string name="narrative_hidden_icon">এটি এর অ্যাপ আইকন লুকিয়ে রাখে যাতে আপনি এটি সহজে দেখতে বা খুলতে না পারেন।</string>
+    <string name="narrative_mimics_brand">এর নাম বা আইকন কোনো পরিচিত ব্যাংক বা সরকারি সংস্থার নকল করে।</string>
+    <string name="narrative_advice_paused">আপনার ডেটা সুরক্ষার জন্য এই অ্যাপের ইন্টারনেট বন্ধ রাখা হয়েছে। আপনি যদি এটি নিজে ইনস্টল না করে থাকেন, তবে এখনই আনইনস্টল করুন।</string>
+    <string name="narrative_advice_critical">এটি একটি বিপজ্জনক হুমকির ধরন। এখনই এর অনুমতিগুলো যাচাই করুন এবং বিশ্বাস না হলে সরিয়ে দিন।</string>
+    <string name="narrative_advice_review">এই সতর্কতাগুলো ম্যালওয়্যার নিশ্চিত করে না, তবে আপনি যদি এটিকে না চেনেন তবে এর অনুমতিগুলো দেখে সরিয়ে দিন।</string>
+    <string name="narrative_advice_low">এই অনুমতিগুলো সচরাচর দেখা যায় এবং সাধারণত নিজে থেকে কম ঝুঁকির।</string>
 </resources>

@@ -315,4 +315,28 @@
     <string name="cov_btexfil_ok">ऑनलाइन या Bluetooth बंद — अभी ऑफ़लाइन Bluetooth-लीक का ख़तरा नहीं</string>
     <string name="cov_btexfil_risk">फ़ोन ऑफ़लाइन + Bluetooth चालू — कोई जोखिम भरा ऐप Bluetooth से डेटा लीक कर सकता है। Bluetooth बंद करें।</string>
     <string name="cov_btexfil_idle">नेटवर्क व Bluetooth स्थिति पढ़ी जा रही है…</string>
+    <!-- Human Narrative Summaries (Anti-Jargon Voice & UI) -->
+    <string name="narrative_intro">%1$s के लिए DHRASHTA-X ने यह पाया:</string>
+    <string name="narrative_sideload_generic">%1$s को Google Play के बाहर इंटरनेट से इंस्टॉल किया गया था।</string>
+    <string name="narrative_sideload_source">%1$s को Google Play के बाहर %2$s से इंस्टॉल किया गया था।</string>
+    <string name="narrative_threat_list">इसका डिजिटल हस्ताक्षर फ़ोन की ज्ञात ख़तरा सूची से मेल खाता है।</string>
+    <string name="narrative_chain_cc1">%1$s को Google Play के बाहर से इंस्टॉल किया गया और 10 मिनट के भीतर स्क्रीन नियंत्रण दे दिया गया।</string>
+    <string name="narrative_chain_cc2">एक्सेसिबिलिटी नियंत्रण मिलने के बाद, इसने एक अज्ञात सर्वर से तय समय पर संपर्क करना शुरू कर दिया।</string>
+    <string name="narrative_chain_cc3">बैंकिंग ऐप खुलते ही, इसने निजी सुरक्षा डेटा चुराने और भेजने की कोशिश की।</string>
+    <string name="narrative_chain_cc4">इस ऐप को उच्च अनुमतियाँ मिलने से ठीक पहले डेवलपर डिबगिंग चालू की गई थी।</string>
+    <string name="narrative_chain_cc5">एक अलग वर्क प्रोफ़ाइल बनाई गई और इस ऐप को उसमें जोड़ा गया।</string>
+    <string name="narrative_timing_a6">ऐप इंस्टॉल होने के 10 मिनट के अंदर ही एक्सेसिबिलिटी अनुमति चालू की गई।</string>
+    <string name="narrative_cap_a11y_sms">इसके पास आपकी स्क्रीन देखने और SMS से आने वाले एकमुश्त (OTP) पासवर्ड पढ़ने की अनुमति है।</string>
+    <string name="narrative_cap_a11y_overlay">यह आपकी स्क्रीन देख सकता है और दूसरे ऐप्स के ऊपर नकली लॉगिन स्क्रीन दिखा सकता है।</string>
+    <string name="narrative_cap_a11y_full">इसके पास आपकी स्क्रीन पर सब कुछ पढ़ने और आपकी जगह बटन दबाने का गहरा नियंत्रण है।</string>
+    <string name="narrative_cap_sms">यह आपके फ़ोन पर आने वाले टेक्स्ट मैसेज पढ़ सकता है, जिसमें बैंक के कोड भी शामिल हैं।</string>
+    <string name="narrative_cap_overlay">इसके पास दूसरे ऐप्स के ऊपर अपनी स्क्रीन दिखाने की अनुमति है।</string>
+    <string name="narrative_canary_leak">इसे इंटरनेट पर निजी सुरक्षा डेटा चुराने और भेजने की कोशिश करते हुए पकड़ा गया।</string>
+    <string name="narrative_covert_beacon">इसे बैकग्राउंड में तय समय पर किसी अज्ञात सर्वर से चुपके से संपर्क करते हुए पकड़ा गया।</string>
+    <string name="narrative_hidden_icon">यह अपना ऐप आइकन छुपाता है ताकि आप इसे आसानी से देख या खोल न सकें।</string>
+    <string name="narrative_mimics_brand">इसका नाम या आइकन किसी जाने-माने बैंक या सरकारी पहचान की नकल करता है।</string>
+    <string name="narrative_advice_paused">आपके डेटा की सुरक्षा के लिए इस ऐप का इंटरनेट रोक दिया गया है। अगर आपने इसे खुद इंस्टॉल नहीं किया था, तो इसे अभी हटा दें।</string>
+    <string name="narrative_advice_critical">यह एक गंभीर खतरे का संकेत है। तुरंत इसकी अनुमतियाँ जाँचें और यदि भरोसा न हो तो हटा दें।</string>
+    <string name="narrative_advice_review">ये संकेत पक्का ख़तरा साबित नहीं करते, लेकिन यदि आप इसे नहीं पहचानते तो इसकी अनुमतियाँ जाँचें और हटा दें।</string>
+    <string name="narrative_advice_low">ये अनुमतियाँ आम हैं और अपने-आप में आमतौर पर कम जोखिम वाली हैं।</string>
 </resources>

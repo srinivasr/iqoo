@@ -105,7 +105,7 @@ class MainActivity : ComponentActivity() {
         } else {
             requestNotificationsOnce()
         }
-        tts = TextToSpeech(this) { status -> ttsReady = status == TextToSpeech.SUCCESS }
+        tts = TextToSpeech(this, { status -> ttsReady = status == TextToSpeech.SUCCESS }, "com.google.android.tts")
         // Target SDK 35+ draws edge-to-edge; pad content by the system bars so nothing sits under them.
         enableEdgeToEdge()
         setContent {
@@ -130,6 +130,11 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         if (resumedOnce) refresh()
         resumedOnce = true
+    }
+
+    override fun onPause() {
+        tts?.stop()
+        super.onPause()
     }
 
     override fun onDestroy() {
@@ -583,11 +588,37 @@ class MainActivity : ComponentActivity() {
 
     private fun speak(text: String) {
         val engine = tts
-        val locale = Locale(AppLanguage.currentTag(this), "IN")
-        if (engine == null || !ttsReady || engine.setLanguage(locale) < TextToSpeech.LANG_AVAILABLE) {
+        if (engine == null || !ttsReady) {
             toast(getString(R.string.toast_tts_unavailable))
             return
         }
+        if (engine.isSpeaking) {
+            engine.stop()
+            return
+        }
+        val tag = AppLanguage.currentTag(this)
+        val candidates = listOf(
+            Locale.forLanguageTag("$tag-IN"),
+            Locale.forLanguageTag(tag),
+            Locale.getDefault(),
+            Locale.ENGLISH,
+        )
+        val selected = candidates.firstOrNull { engine.isLanguageAvailable(it) >= TextToSpeech.LANG_AVAILABLE }
+        if (selected == null || engine.setLanguage(selected) < TextToSpeech.LANG_AVAILABLE) {
+            toast(getString(R.string.toast_tts_unavailable))
+            return
+        }
+        val matchingVoices = engine.voices?.filter { voice ->
+            voice.locale.language == selected.language &&
+                !voice.isNetworkConnectionRequired &&
+                !voice.features.contains(TextToSpeech.Engine.KEY_FEATURE_NOT_INSTALLED)
+        }
+        val bestVoice = matchingVoices?.maxByOrNull { it.quality }
+        if (bestVoice != null) {
+            engine.voice = bestVoice
+        }
+        engine.setPitch(1.02f)
+        engine.setSpeechRate(1.0f)
         engine.speak(text, TextToSpeech.QUEUE_FLUSH, null, "explanation")
     }
 
