@@ -56,6 +56,7 @@ import com.dhrashta.x.sensing.UsageWatcher
 import com.dhrashta.x.ui.theme.DhrashtaTheme
 import com.dhrashta.x.ui.theme.AppThemeMode
 import com.dhrashta.x.ui.theme.ThemePreference
+import com.dhrashta.x.data.PolicyPreference
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -102,10 +103,13 @@ class MainActivity : ComponentActivity() {
         AudioSettingsStore.init(applicationContext)
         ContextCompat.startForegroundService(this, Intent(this, DhrashtaForegroundService::class.java))
         NetworkPause.startDnsMonitor(this)
-        val firstRun = !AppLanguage.isChosen(this)
+        val firstRunLanguage = !AppLanguage.isChosen(this)
+        val firstRunPolicy = !PolicyPreference.isAccepted(this)
         // Changing language recreates the Activity; stay on the picker when that happens.
-        if (firstRun || savedInstanceState?.getBoolean(STATE_ON_LANGUAGE) == true) {
-            destination = Screen.Language(firstRun)
+        if (savedInstanceState?.getBoolean(STATE_ON_POLICY) == true || firstRunPolicy) {
+            destination = Screen.Policies(onboarding = true)
+        } else if (firstRunLanguage || savedInstanceState?.getBoolean(STATE_ON_LANGUAGE) == true) {
+            destination = Screen.Language(firstRunLanguage)
         } else {
             requestNotificationsOnce()
         }
@@ -138,6 +142,7 @@ class MainActivity : ComponentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putBoolean(STATE_ON_LANGUAGE, destination is Screen.Language)
+        outState.putBoolean(STATE_ON_POLICY, destination is Screen.Policies)
     }
 
     private fun requestNotificationsOnce() {
@@ -226,6 +231,15 @@ class MainActivity : ComponentActivity() {
         }
 
         when (screen) {
+            is Screen.Policies -> PolicyScreen(
+                onboarding = screen.onboarding,
+                onAccept = {
+                    PolicyPreference.setAccepted(this, true)
+                    val needsLanguage = !AppLanguage.isChosen(this)
+                    destination = if (needsLanguage) Screen.Language(firstRun = true) else if (screen.onboarding) Screen.Home else Screen.Settings
+                },
+                onBack = if (screen.onboarding) null else ({ destination = Screen.Settings }),
+            )
             is Screen.Language -> LanguagePickerScreen(
                 selectedTag = language.tag,
                 onSelect = { tag -> if (tag != language.tag) AppLanguage.apply(this, tag) },
@@ -277,6 +291,7 @@ class MainActivity : ComponentActivity() {
                 onSelfTest = ::runSelfTest,
                 onAccessibilitySettings = { GuidedRecovery.openA11ySettings(this) },
                 onChangeLanguage = { destination = Screen.Language(firstRun = false) },
+                onPolicies = { destination = Screen.Policies(onboarding = false) },
                 onUntrust = { pkg -> setTrusted(pkg, false) },
                 onOpenApp = { destination = Screen.Details(it) },
             )
@@ -683,9 +698,11 @@ class MainActivity : ComponentActivity() {
         data class Details(val pkg: String) : Screen
         data class Paused(val pkg: String) : Screen
         data class Language(val firstRun: Boolean) : Screen
+        data class Policies(val onboarding: Boolean) : Screen
     }
 
     private companion object {
         const val STATE_ON_LANGUAGE = "on_language_screen"
+        const val STATE_ON_POLICY = "on_policy_screen"
     }
 }

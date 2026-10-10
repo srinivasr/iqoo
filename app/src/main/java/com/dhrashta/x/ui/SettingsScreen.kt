@@ -94,6 +94,7 @@ fun SettingsScreen(
     onSelfTest: () -> Unit,
     onAccessibilitySettings: () -> Unit,
     onChangeLanguage: () -> Unit,
+    onPolicies: () -> Unit = {},
     onUntrust: (String) -> Unit,
     onOpenApp: (String) -> Unit,
 ) {
@@ -326,6 +327,30 @@ fun SettingsScreen(
                 color = MutedInk,
                 style = MaterialTheme.typography.bodyMedium,
             )
+
+            Spacer(Modifier.height(30.dp))
+            SectionTitle("Compliance & Policies")
+            Spacer(Modifier.height(12.dp))
+            QuietCard(Modifier.fillMaxWidth().clickable(onClick = onPolicies)) {
+                Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Terms, Policies & Permissions", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Zero-telemetry audit, DPDP Act compliance & permission rationale for judges",
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium,
+                            modifier = Modifier.padding(top = 2.dp),
+                        )
+                    }
+                    Text(
+                        "Review",
+                        color = Accent,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(end = 6.dp),
+                    )
+                    Chevron(color = Accent)
+                }
+            }
 
             Spacer(Modifier.height(30.dp))
             SectionTitle(stringResource(R.string.set_about))
