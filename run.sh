@@ -14,17 +14,30 @@ PKG="com.dhrashta.x"
 APK="app/build/outputs/apk/debug/app-debug.apk"
 
 echo "==> Ensuring laptop Android emulator is running..."
-if ! adb devices | grep -q "emulator-"; then
+EMU_PID=""
+if ! adb devices | grep -Eq '^emulator-[0-9]+[[:space:]]+device$'; then
     AVD_NAME=$(emulator -list-avds 2>/dev/null | head -n 1)
     if [ -n "$AVD_NAME" ]; then
         echo "==> Booting emulator window '$AVD_NAME' on your laptop desktop..."
-        nohup emulator -avd "$AVD_NAME" -no-snapshot-load >/tmp/emulator.log 2>&1 &
-        disown
+        emulator -avd "$AVD_NAME" -no-snapshot-load -gpu software >/tmp/emulator.log 2>&1 &
+        EMU_PID=$!
         echo "==> Waiting for laptop emulator to boot..."
-        adb wait-for-device
-        while [ "$(adb -e shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" != "1" ]; do
+        BOOTED=""
+        for _ in {1..90}; do
+            if ! kill -0 "$EMU_PID" 2>/dev/null; then
+                echo "Error: Emulator closed during startup. Check /tmp/emulator.log."
+                exit 1
+            fi
+            if [ "$(adb -e shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]; then
+                BOOTED=1
+                break
+            fi
             sleep 2
         done
+        if [ -z "$BOOTED" ]; then
+            echo "Error: Emulator did not finish booting. Check /tmp/emulator.log."
+            exit 1
+        fi
         echo "==> Laptop emulator is ready!"
     else
         echo "Error: No emulator AVD found."
@@ -49,3 +62,8 @@ adb -e shell am start -n "$PKG/.ui.MainActivity"
 
 echo "==> App is running on your laptop emulator window!"
 
+# Keep a window started by this script alive until the user closes it.
+if [ -n "$EMU_PID" ]; then
+    echo "==> Keep this terminal open while using the emulator; close its window to exit."
+    wait "$EMU_PID"
+fi

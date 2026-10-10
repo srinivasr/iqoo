@@ -3,6 +3,7 @@ package com.dhrashta.x.ui
 import android.content.res.Resources
 import android.text.format.DateUtils
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.animation.core.animateFloat
@@ -37,11 +38,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.dhrashta.x.R
-import com.dhrashta.x.ui.components.AppIdentity
 import com.dhrashta.x.ui.components.Chevron
 import com.dhrashta.x.ui.components.ChevronDirection
 import com.dhrashta.x.ui.components.ClickableRow
@@ -49,7 +51,6 @@ import com.dhrashta.x.ui.components.PrimaryAction
 import com.dhrashta.x.ui.components.QuietCard
 import com.dhrashta.x.ui.components.ScreenPadding
 import com.dhrashta.x.ui.components.SecondaryAction
-import com.dhrashta.x.ui.components.SectionTitle
 import com.dhrashta.x.ui.theme.Amber
 import com.dhrashta.x.ui.theme.AmberSoft
 import com.dhrashta.x.ui.theme.Canvas
@@ -214,7 +215,7 @@ fun RiskDetailsScreen(
     onShareReport: (AppRisk) -> Unit = {},
 ) {
     BackHandler(onBack = onBack)
-    var evidenceExpanded by rememberSaveable(risk.app.pkg) { mutableStateOf(false) }
+    var detailsExpanded by rememberSaveable(risk.app.pkg) { mutableStateOf(false) }
     val res = LocalContext.current.resources
     val summary = explanation ?: explanationFor(res, risk)
 
@@ -223,51 +224,61 @@ fun RiskDetailsScreen(
     ) {
         ScreenHeader(stringResource(R.string.details_title), onBack)
         Spacer(Modifier.height(12.dp))
-        AppIdentity(risk.app)
-        Text(
-            sourceText(res, risk.app),
-            color = MutedInk,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(start = 64.dp, top = 4.dp),
-        )
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            AppIcon(risk.app.pkg, risk.app.label, Modifier.size(52.dp))
+            Text(risk.app.label, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f), maxLines = 2, overflow = TextOverflow.Ellipsis)
+        }
         Spacer(Modifier.height(22.dp))
         VerdictBanner(risk)
         Spacer(Modifier.height(20.dp))
-        val method = stringResource(if (risk.fullAnalysis) R.string.details_full_analysis else R.string.details_quick_check)
-        Text(
-            risk.lastReviewed?.let { stringResource(R.string.details_score_line_time, method, risk.score, relativeTime(res, it)) }
-                ?: stringResource(R.string.details_score_line, method, risk.score),
-            color = MutedInk,
-            style = MaterialTheme.typography.bodyMedium,
-        )
         Text(
             summary,
             style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.padding(top = 10.dp),
         )
-        Spacer(Modifier.height(22.dp))
-        SectionTitle(stringResource(R.string.details_what_we_found))
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(18.dp))
         QuietCard(Modifier.fillMaxWidth()) {
-            Column(Modifier.padding(horizontal = 16.dp)) {
-                if (risk.evidence.isEmpty()) {
-                    EvidenceItem(stringResource(R.string.details_no_warning_title), stringResource(R.string.details_no_warning_detail), Forest)
+            Column(Modifier.animateContentSize()) {
+                Row(
+                    Modifier.fillMaxWidth().clickable(role = Role.Button) { detailsExpanded = !detailsExpanded }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(stringResource(R.string.details_technical), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
+                    Chevron(if (detailsExpanded) ChevronDirection.Up else ChevronDirection.Down)
                 }
-                risk.evidence.forEachIndexed { index, evidence ->
-                    if (index > 0) HorizontalDivider(color = Line)
-                    EvidenceItem(evidence.title, evidence.detail, if (evidence.weight >= 20) Danger else if (evidence.weight >= 10) Amber else Info)
+                if (detailsExpanded) {
+                    HorizontalDivider(color = Line)
+                    Column(Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
+                        val method = stringResource(if (risk.fullAnalysis) R.string.details_full_analysis else R.string.details_quick_check)
+                        Text(
+                            risk.lastReviewed?.let { stringResource(R.string.details_score_line_time, method, risk.score, relativeTime(res, it)) }
+                                ?: stringResource(R.string.details_score_line, method, risk.score),
+                            color = MutedInk,
+                            style = MaterialTheme.typography.bodyMedium,
+                        )
+                        Text(sourceText(res, risk.app), color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                        Text(
+                            stringResource(R.string.details_what_we_found),
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(top = 18.dp),
+                        )
+                        if (risk.evidence.isEmpty()) {
+                            EvidenceItem(stringResource(R.string.details_no_warning_title), stringResource(R.string.details_no_warning_detail), Forest)
+                        }
+                        risk.evidence.forEachIndexed { index, evidence ->
+                            if (index > 0) HorizontalDivider(color = Line)
+                            EvidenceItem(evidence.title, evidence.detail, if (evidence.weight >= 20) Danger else if (evidence.weight >= 10) Amber else Info)
+                        }
+                        if (risk.evidence.isNotEmpty() && risk.level >= RiskLevel.Review) {
+                            Text(stringResource(R.string.details_not_confirm), color = MutedInk, style = MaterialTheme.typography.bodyMedium)
+                        }
+                        HorizontalDivider(Modifier.padding(vertical = 14.dp), color = Line)
+                        TechnicalDetails(risk)
+                    }
                 }
             }
         }
-        if (risk.evidence.isNotEmpty() && risk.level >= RiskLevel.Review) {
-            Text(
-                stringResource(R.string.details_not_confirm),
-                color = MutedInk,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.padding(top = 12.dp),
-            )
-        }
-        Spacer(Modifier.height(10.dp))
+        Spacer(Modifier.height(12.dp))
         ClickableRow({ onListen(summary) }) {
             if (isSpeaking) {
                 EqualizerAnimation(modifier = Modifier.size(22.dp), color = Danger)
@@ -302,14 +313,6 @@ fun RiskDetailsScreen(
                 modifier = Modifier.padding(start = 12.dp).weight(1f),
             )
             Chevron()
-        }
-        HorizontalDivider(color = Line)
-        ClickableRow({ evidenceExpanded = !evidenceExpanded }) {
-            Text(stringResource(R.string.details_technical), fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-            Chevron(if (evidenceExpanded) ChevronDirection.Down else ChevronDirection.Right)
-        }
-        if (evidenceExpanded) {
-            TechnicalDetails(risk)
         }
         Spacer(Modifier.height(12.dp))
         if (risk.paused) {
@@ -375,7 +378,6 @@ private fun VerdictBanner(risk: AppRisk) {
             Text(if (risk.level >= RiskLevel.Review && !risk.trusted) "!" else "✓", color = Canvas, fontWeight = FontWeight.Bold)
         }
         Text(text, color = fg, fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f))
-        Text("${risk.score}", color = fg, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleLarge)
     }
 }
 
@@ -440,4 +442,3 @@ private fun EvidenceItem(title: String, detail: String, dot: Color) {
         }
     }
 }
-

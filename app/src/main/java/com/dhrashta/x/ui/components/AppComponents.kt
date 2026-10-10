@@ -149,12 +149,13 @@ fun Chevron(direction: ChevronDirection = ChevronDirection.Right, color: Color =
         when (direction) {
             ChevronDirection.Right -> { path.moveTo(size.width * .35f, size.height * .2f); path.lineTo(size.width * .65f, size.height * .5f); path.lineTo(size.width * .35f, size.height * .8f) }
             ChevronDirection.Down -> { path.moveTo(size.width * .2f, size.height * .35f); path.lineTo(size.width * .5f, size.height * .65f); path.lineTo(size.width * .8f, size.height * .35f) }
+            ChevronDirection.Up -> { path.moveTo(size.width * .2f, size.height * .65f); path.lineTo(size.width * .5f, size.height * .35f); path.lineTo(size.width * .8f, size.height * .65f) }
         }
         scale(if (mirror) -1f else 1f, 1f) { drawPath(path, color, style = Stroke(width = 2.2f, cap = StrokeCap.Round)) }
     }
 }
 
-enum class ChevronDirection { Right, Down }
+enum class ChevronDirection { Right, Down, Up }
 
 @Composable
 fun ClickableRow(onClick: () -> Unit, content: @Composable RowScope.() -> Unit) {
