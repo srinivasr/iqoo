@@ -10,7 +10,6 @@ import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.net.VpnService
 import android.os.ParcelFileDescriptor
-import android.os.Process
 import android.system.OsConstants
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -90,12 +89,12 @@ class GuardVpnService : VpnService() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForeground(NOTIFICATION_ID, notification())
-        val uid = intent?.getIntExtra(EXTRA_UID, Process.INVALID_UID) ?: Process.INVALID_UID
+        val uid = intent?.getIntExtra(EXTRA_UID, INVALID_UID) ?: INVALID_UID
         when (intent?.action) {
-            ACTION_PAUSE_UID -> if (uid != Process.INVALID_UID) requestedUids += uid
-            ACTION_RESUME_UID -> if (uid != Process.INVALID_UID) requestedUids -= uid
-            ACTION_INSPECT_UID -> if (uid != Process.INVALID_UID) requestedInspect += uid
-            ACTION_STOP_INSPECT_UID -> if (uid != Process.INVALID_UID) requestedInspect -= uid
+            ACTION_PAUSE_UID -> if (uid != INVALID_UID) requestedUids += uid
+            ACTION_RESUME_UID -> if (uid != INVALID_UID) requestedUids -= uid
+            ACTION_INSPECT_UID -> if (uid != INVALID_UID) requestedInspect += uid
+            ACTION_STOP_INSPECT_UID -> if (uid != INVALID_UID) requestedInspect -= uid
             ACTION_START_MONITOR -> monitorEnabled = true
             ACTION_STOP_MONITOR -> monitorEnabled = false
         }
@@ -243,7 +242,7 @@ class GuardVpnService : VpnService() {
                     }
                     if (count <= 0) continue
                     val resolved = resolveUid(buffer, count)
-                    val uid = if (resolved == Process.INVALID_UID && single != null) single else resolved
+                    val uid = if (resolved == INVALID_UID && single != null) single else resolved
                     val token = CanaryMatcher.scan(buffer, count)
                     if (token != null) {
                         // Never forwarded, also for watched apps: this is a blocked send attempt.
@@ -267,11 +266,11 @@ class GuardVpnService : VpnService() {
 
     /** Owner UID of the connection a packet belongs to, cached per 5-tuple (a binder call otherwise). */
     private fun resolveUid(buffer: ByteArray, count: Int): Int {
-        val info = inspector.parse(buffer, count) ?: return Process.INVALID_UID
+        val info = inspector.parse(buffer, count) ?: return INVALID_UID
         val key = "${info.protocol}|${info.source}|${info.destination}"
         uidByTuple[key]?.let { return it }
         val uid = inspector.getUid(buffer, count)
-        if (uid != Process.INVALID_UID) {
+        if (uid != INVALID_UID) {
             if (uidByTuple.size > 4_096) uidByTuple.clear()
             uidByTuple[key] = uid
         }
@@ -377,7 +376,7 @@ class GuardVpnService : VpnService() {
 
     private fun onDnsQuery(uid: Int, domain: String, ts: Long) {
         if (Log.isLoggable(TAG, Log.DEBUG)) Log.d(TAG, "DNS uid=$uid $domain")
-        if (uid == Process.INVALID_UID) return
+        if (uid == INVALID_UID) return
         BeaconDetector.recordDnsQuery(uid, domain, ts)
         val beacon = BeaconDetector.checkForBeacon(uid) ?: return
         val pkg = packageForUid(uid)
@@ -396,7 +395,7 @@ class GuardVpnService : VpnService() {
      * SEND ATTEMPT, not proof that data left the phone.
      */
     private fun onCanaryAttempt(uid: Int, token: String) {
-        if (uid == Process.INVALID_UID) {
+        if (uid == INVALID_UID) {
             Log.w(TAG, "Decoy $token seen from an unresolved UID; not attributed")
             return
         }
@@ -465,13 +464,13 @@ class GuardVpnService : VpnService() {
     private fun setContained(uids: Set<Int>) {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
             .putStringSet(KEY_CONTAINED, uids.map(Int::toString).toSet())
-            .commit()
+            .apply()
     }
 
     private fun setInspected(uids: Set<Int>) {
         getSharedPreferences(PREFS, MODE_PRIVATE).edit()
             .putStringSet(KEY_INSPECTED, uids.map(Int::toString).toSet())
-            .commit()
+            .apply()
     }
 
     private fun persistRequests() {
@@ -518,6 +517,7 @@ class GuardVpnService : VpnService() {
         .build()
 
     companion object {
+        const val INVALID_UID = -1
         const val ACTION_PAUSE_UID = "com.dhrashta.x.action.PAUSE_UID"
         const val ACTION_RESUME_UID = "com.dhrashta.x.action.RESUME_UID"
         const val ACTION_START_MONITOR = "com.dhrashta.x.action.START_DNS_MONITOR"

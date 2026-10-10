@@ -18,7 +18,8 @@ class A11yInspector(context: Context) {
     private val manager = context.getSystemService(AccessibilityManager::class.java)
 
     fun scan(): List<A11yFinding> = manager
-        .getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+        ?.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK)
+        .orEmpty()
         .mapNotNull { service ->
             val pkg = service.resolveInfo?.serviceInfo?.packageName ?: return@mapNotNull null
             A11yFinding(

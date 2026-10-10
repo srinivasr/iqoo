@@ -98,10 +98,10 @@ fun explanationFor(res: Resources, risk: AppRisk): String {
     }
 
     // 4. Deception & Covert Network Activity
-    if (risk.evidence.any { it.weight >= 50 && (it.title.contains("canary", ignoreCase = true) || it.title.contains("नकली", ignoreCase = true) || it.title.contains("নকল", ignoreCase = true)) }) {
+    if (risk.evidence.any { it.titleResId == R.string.ev_canary_title || (it.weight >= 50 && it.title.contains("canary", ignoreCase = true)) }) {
         story += res.getString(R.string.narrative_canary_leak)
     }
-    if (risk.evidence.any { it.title.contains("beacon", ignoreCase = true) || it.title.contains("सर्वर", ignoreCase = true) || it.title.contains("সার্ভার", ignoreCase = true) }) {
+    if (risk.evidence.any { it.titleResId == R.string.ev_beacon_title || it.title.contains("beacon", ignoreCase = true) }) {
         story += res.getString(R.string.narrative_covert_beacon)
     }
     if (!risk.app.hasLauncher && !risk.app.isSystem) {

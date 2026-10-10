@@ -23,10 +23,11 @@ object BrandHeuristic {
         "in.gov.uidai.mAadhaarPlus", "in.gov.uidai.maadhaarplus", "in.org.npci.upiapp",
         "com.google.android.apps.nbu.paisa.user",
     )
+    private val OFFICIAL_PACKAGES_LOWER: Set<String> = OFFICIAL_PACKAGES.map { it.lowercase() }.toSet()
 
     fun mimics(label: String, pkg: String, installer: String?, isSystemApp: Boolean): Boolean {
         if (isSystemApp || installer == PLAY_STORE) return false
-        if (pkg in OFFICIAL_PACKAGES || pkg.lowercase() in OFFICIAL_PACKAGES.map(String::lowercase)) return false
+        if (pkg in OFFICIAL_PACKAGES || pkg.lowercase() in OFFICIAL_PACKAGES_LOWER) return false
         return matchesName(label, pkg)
     }
 

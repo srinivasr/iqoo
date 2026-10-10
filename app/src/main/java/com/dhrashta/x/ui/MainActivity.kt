@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
         } else {
             requestNotificationsOnce()
         }
-        tts = TextToSpeech(this, { status ->
+        tts = TextToSpeech(this) { status ->
             ttsReady = status == TextToSpeech.SUCCESS
             if (ttsReady) {
                 tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
@@ -125,7 +125,7 @@ class MainActivity : ComponentActivity() {
                     }
                 })
             }
-        }, "com.google.android.tts")
+        }
         // Target SDK 35+ draws edge-to-edge; pad content by the system bars so nothing sits under them.
         enableEdgeToEdge()
         setContent {

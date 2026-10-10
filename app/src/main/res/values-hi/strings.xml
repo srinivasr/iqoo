@@ -351,4 +351,5 @@
     <string name="action_stop_audio">रोकें</string>
     <string name="action_share_report">सुरक्षा रिपोर्ट साझा करें</string>
     <string name="share_report_title">सुरक्षा रिपोर्ट भेजें</string>
+    <string name="critical_alert_spoken">सुरक्षा चेतावनी। %1$s को गंभीर ख़तरा माना गया और इसका इंटरनेट रोक दिया गया।</string>
 </resources>

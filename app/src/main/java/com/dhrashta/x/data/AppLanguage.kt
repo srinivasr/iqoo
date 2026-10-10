@@ -66,7 +66,7 @@ object AppLanguage {
 
     /** Saves and applies [tag]; the Activity is recreated so every screen redraws in the new language. */
     fun apply(activity: Activity, tag: String) {
-        prefs(activity).edit().putString(KEY_TAG, tag).commit()
+        prefs(activity).edit().putString(KEY_TAG, tag).apply()
         val explainerName = when (tag) {
             "hi" -> "Hindi"
             "bn" -> "Bengali"

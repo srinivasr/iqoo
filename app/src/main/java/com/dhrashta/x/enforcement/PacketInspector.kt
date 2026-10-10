@@ -2,7 +2,6 @@ package com.dhrashta.x.enforcement
 
 import android.content.Context
 import android.net.ConnectivityManager
-import android.os.Process
 import java.net.InetAddress
 import java.net.InetSocketAddress
 

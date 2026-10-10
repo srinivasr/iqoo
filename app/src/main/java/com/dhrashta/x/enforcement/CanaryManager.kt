@@ -56,7 +56,7 @@ object CanaryManager {
     /** Opt in (plants decoys) or opt out (removes the decoy contact and all tokens). */
     fun setEnabled(context: Context, enabled: Boolean) {
         val appContext = context.applicationContext
-        appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_ENABLED, enabled).commit()
+        appContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putBoolean(KEY_ENABLED, enabled).apply()
         if (enabled) plantCanaries(appContext) else removeCanaries(appContext)
     }
 

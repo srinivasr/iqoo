@@ -365,4 +365,5 @@
     <string name="action_stop_audio">Stop</string>
     <string name="action_share_report">Share Incident Report</string>
     <string name="share_report_title">Share Security Report</string>
+    <string name="critical_alert_spoken">Security alert. %1$s was flagged as a critical threat and network access was paused.</string>
 </resources>

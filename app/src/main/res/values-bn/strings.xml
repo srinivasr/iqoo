@@ -351,4 +351,5 @@
     <string name="action_stop_audio">থামুন</string>
     <string name="action_share_report">নিরাপত্তা রিপোর্ট শেয়ার করুন</string>
     <string name="share_report_title">নিরাপত্তা রিপোর্ট পাঠান</string>
+    <string name="critical_alert_spoken">নিরাপত্তা সতর্কতা। %1$s-কে গুরুতর হুমকি হিসেবে চিহ্নিত করা হয়েছে এবং এর ইন্টারনেট অ্যাক্সেস স্থগিত করা হয়েছে।</string>
 </resources>

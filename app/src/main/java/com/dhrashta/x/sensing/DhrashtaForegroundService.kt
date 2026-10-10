@@ -33,6 +33,7 @@ import com.dhrashta.x.decision.ThreatList
 import com.dhrashta.x.decision.TrustPolicy
 import com.dhrashta.x.enforcement.NetworkPause
 import com.dhrashta.x.ui.MainActivity
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -79,9 +80,22 @@ class DhrashtaForegroundService : Service() {
         startForeground(MONITOR_NOTIFICATION_ID, monitorNotification())
         EventLogger.init(this)
         AudioSettingsStore.init(this)
-        alertTts = TextToSpeech(this, { status ->
-            alertTtsReady = status == TextToSpeech.SUCCESS
-        }, "com.google.android.tts")
+        alertTts = TextToSpeech(this) { status ->
+            if (status == TextToSpeech.SUCCESS) {
+                alertTtsReady = true
+                val tag = AppLanguage.currentTag(this)
+                val candidates = listOf(
+                    Locale.forLanguageTag("$tag-IN"),
+                    Locale.forLanguageTag(tag),
+                    Locale.getDefault(),
+                    Locale.ENGLISH,
+                )
+                val selected = candidates.firstOrNull { (alertTts?.isLanguageAvailable(it) ?: TextToSpeech.LANG_NOT_SUPPORTED) >= TextToSpeech.LANG_AVAILABLE }
+                if (selected != null) {
+                    alertTts?.language = selected
+                }
+            }
+        }
         threatList = runCatching { ThreatList.load(this) }.getOrElse {
             Log.e(TAG, "Could not load threats.json; continuing with an empty local threat list", it)
             ThreatList.empty()
@@ -456,7 +470,7 @@ class DhrashtaForegroundService : Service() {
         if (engine != null && alertTtsReady) {
             val pace = AudioSettingsStore.getPace(this)
             engine.setSpeechRate(pace)
-            val msg = "Security alert. $appLabel was flagged as a critical threat and network access was paused."
+            val msg = getString(R.string.critical_alert_spoken, appLabel)
             engine.speak(msg, TextToSpeech.QUEUE_FLUSH, null, "critical_alert_$appLabel")
         }
     }

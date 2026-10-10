@@ -73,7 +73,12 @@ data class InstalledApp(
 enum class RiskLevel { Safe, Review, High, Critical }
 
 /** One human-readable reason behind an app's score. */
-data class Evidence(val title: String, val detail: String, val weight: Int)
+data class Evidence(
+    val title: String,
+    val detail: String,
+    val weight: Int,
+    val titleResId: Int? = null,
+)
 
 /** An installed app joined with everything the engine and sensors know about it. */
 data class AppRisk(
@@ -186,7 +191,7 @@ fun assessApps(
     val eventsByPkg = events.groupBy { it.pkg }
     return apps.map { app ->
         val appEvents = eventsByPkg[app.pkg].orEmpty()
-        fun evs(title: Int, detail: String, weight: Int) = Evidence(res.getString(title), detail, weight)
+        fun evs(title: Int, detail: String, weight: Int) = Evidence(res.getString(title), detail, weight, title)
         fun ev(title: Int, detail: Int, weight: Int) = evs(title, res.getString(detail), weight)
         val evidence = buildList {
             if (app.inThreatList) add(ev(R.string.ev_threat_title, R.string.ev_threat_detail, 50))
